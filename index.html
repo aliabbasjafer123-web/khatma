@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="نظام إدارة الختمات القرآنية - توزيع ومتابعة استمارات الختمة">
+    <title>نظام إدارة الختمات القرآنية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/print.css" media="print">
+    <style>
+        /* تحسينات التصميم للاستمارات */
+        .form-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            border: 1px solid #eaeaea;
+            padding: 18px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .form-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            }
+
+            .form-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 6px;
+                height: 100%;
+            }
+
+            .form-card.status-available::before, .form-card.available::before {
+                background-color: #10b981;
+            }
+
+            .form-card.status-distributed::before, .form-card.distributed::before {
+                background-color: #3b82f6;
+            }
+
+            .form-card.status-reserved::before, .form-card.reserved::before {
+                background-color: #f59e0b;
+            }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">☪</div>
+                <div class="logo-text">
+                    <span class="logo-title">ختمات القرآن</span>
+                    <span class="logo-sub">نظام الإدارة المتكامل</span>
+                </div>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle" title="إخفاء القائمة">‹</button>
+        </div>
+
+        <div class="cycle-selector">
+            <label>الدورة الحالية</label>
+            <select id="activeCycleSelect">
+                <option value="">-- اختر دورة --</option>
+            </select>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">لوحة التحكم</span>
+            </a>
+            <a href="#" class="nav-item" data-page="forms">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">الاستمارات</span>
+                <span class="nav-badge" id="availableBadge">0</span>
+            </a>
+            <a href="#" class="nav-item" data-page="participants">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">المشتركون</span>
+            </a>
+            <a href="#" class="nav-item" data-page="representatives">
+                <span class="nav-icon">🧑‍💼</span>
+                <span class="nav-label">المندوبون</span>
+            </a>
+            <a href="#" class="nav-item" data-page="distribution">
+                <span class="nav-icon">📤</span>
+                <span class="nav-label">التوزيع</span>
+            </a>
+            <a href="#" class="nav-item" data-page="reports">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">التقارير</span>
+            </a>
+            <a href="#" class="nav-item" data-page="cycles">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-label">الدورات</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">الإعدادات</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="btn-export" id="exportBtn" title="تصدير البيانات">
+                <span>💾</span> تصدير البيانات
+            </button>
+            <button class="btn-import" id="importBtn" title="استيراد البيانات">
+                <span>📂</span> استيراد البيانات
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display:none">
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-right">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <h1 class="page-title" id="pageTitle">لوحة التحكم</h1>
+            </div>
+            <div class="topbar-left">
+                <div class="cycle-info" id="cycleInfo">
+                    <span class="cycle-badge">لا توجد دورة نشطة</span>
+                </div>
+                <div class="datetime" id="datetime"></div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- DASHBOARD PAGE -->
+            <section class="page" id="page-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="stat-icon">📄</div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-total">302</span>
+                            <span class="stat-label">إجمالي الاستمارات</span>
+                        </div>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-available">0</span>
+                            <span class="stat-label">متاحة / جاهزة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card distributed">
+                        <div class="stat-icon">📬</div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-distributed">0</span>
+                            <span class="stat-label">موزعة للمشتركين</span>
+                        </div>
+                    </div>
+                    <div class="stat-card reserved">
+                        <div class="stat-icon">🔒</div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-reserved">0</span>
+                            <span class="stat-label">محجوزة عند المندوبين</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <h3>تقدم التوزيع</h3>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill distributed-fill" id="progressDistributed" style="width:0%"></div>
+                                <div class="progress-bar-fill reserved-fill" id="progressReserved" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-legend">
+                            <span class="legend-item"><span class="legend-dot distributed-dot"></span>موزعة</span>
+                            <span class="legend-item"><span class="legend-dot reserved-dot"></span>محجوزة</span>
+                            <span class="legend-item"><span class="legend-dot available-dot"></span>متاحة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dash-card">
+                        <h3 class="dash-card-title"><span>👥</span> إحصائيات المشتركين</h3>
+                        <div class="dash-stats">
+                            <div class="dash-stat-row"><span>إجمالي المشتركين</span><span class="dash-stat-val" id="ds-participants">0</span></div>
+                            <div class="dash-stat-row"><span>حصلوا على استمارات</span><span class="dash-stat-val" id="ds-participants-with-forms">0</span></div>
+                            <div class="dash-stat-row"><span>بدون استمارات بعد</span><span class="dash-stat-val warn" id="ds-participants-without-forms">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="dash-card">
+                        <h3 class="dash-card-title"><span>🧑‍💼</span> إحصائيات المندوبين</h3>
+                        <div class="dash-stats">
+                            <div class="dash-stat-row"><span>إجمالي المندوبين</span><span class="dash-stat-val" id="ds-representatives">0</span></div>
+                            <div class="dash-stat-row"><span>لديهم استمارات محجوزة</span><span class="dash-stat-val" id="ds-reps-with-forms">0</span></div>
+                            <div class="dash-stat-row"><span>متوسط الاستمارات/مندوب</span><span class="dash-stat-val" id="ds-avg-forms">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="dash-card">
+                        <h3 class="dash-card-title"><span>📅</span> معلومات الدورة</h3>
+                        <div class="dash-stats" id="ds-cycle-info">
+                            <div class="dash-stat-row"><span>اسم الدورة</span><span class="dash-stat-val" id="ds-cycle-name">-</span></div>
+                            <div class="dash-stat-row"><span>تاريخ البداية</span><span class="dash-stat-val" id="ds-cycle-start">-</span></div>
+                            <div class="dash-stat-row"><span>تاريخ الانتهاء</span><span class="dash-stat-val" id="ds-cycle-end">-</span></div>
+                            <div class="dash-stat-row"><span>إجمالي المبالغ (ر.ع)</span><span class="dash-stat-val" id="ds-cycle-amount" style="color:var(--success)">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>آخر العمليات</h3>
+                    <div id="recentActivity" class="activity-list">
+                        <div class="empty-state"><span>📭</span><p>لا توجد عمليات حديثة</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FORMS PAGE -->
+            <section class="page hidden" id="page-forms">
+                <div class="page-toolbar">
+                    <div class="toolbar-filters">
+                        <button class="filter-btn active" data-filter="all" id="filter-all">الكل <span id="fc-all">302</span></button>
+                        <button class="filter-btn" data-filter="available" id="filter-available">متاحة <span id="fc-available">0</span></button>
+                        <button class="filter-btn" data-filter="distributed" id="filter-distributed">موزعة <span id="fc-distributed">0</span></button>
+                        <button class="filter-btn" data-filter="reserved" id="filter-reserved">محجوزة <span id="fc-reserved">0</span></button>
+                    </div>
+                    <div class="toolbar-search">
+                        <input type="text" id="formsSearch" placeholder="بحث برقم الاستمارة أو اسم السورة..." class="search-input">
+                    </div>
+                </div>
+                <div class="forms-grid" id="formsGrid">
+                    <!-- Forms will be generated by JS -->
+                </div>
+            </section>
+
+            <!-- PARTICIPANTS PAGE -->
+            <section class="page hidden" id="page-participants">
+                <div class="page-toolbar">
+                    <button class="btn-primary" id="addParticipantBtn"><span>+</span> إضافة مشترك</button>
+                    <div class="toolbar-search">
+                        <input type="text" id="participantsSearch" placeholder="بحث في المشتركين..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="participantsTable">
+                        <thead>
+                            <tr><th>#</th><th>الاسم</th><th>المندوب</th><th>رقم الهاتف</th><th>عدد الاستمارات</th><th>الاستمارات</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="participantsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- REPRESENTATIVES PAGE -->
+            <section class="page hidden" id="page-representatives">
+                <div class="page-toolbar">
+                    <button class="btn-primary" id="addRepresentativeBtn"><span>+</span> إضافة مندوب</button>
+                    <div class="toolbar-search">
+                        <input type="text" id="repsSearch" placeholder="بحث في المندوبين..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="repsTable">
+                        <thead>
+                            <tr><th>#</th><th>الاسم</th><th>المنطقة</th><th>رقم الهاتف</th><th>محجوزة عنده</th><th>موزعة منه</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="repsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- DISTRIBUTION PAGE (تمت إضافة الحقول الجديدة هنا) -->
+            <section class="page hidden" id="page-distribution">
+                <div class="distribution-tabs">
+                    <button class="dist-tab active" data-dist="direct">توزيع مباشر لمشترك</button>
+                    <button class="dist-tab" data-dist="representative">حجز عند مندوب</button>
+                    <button class="dist-tab" data-dist="history">سجل التوزيع</button>
+                </div>
+
+                <!-- Direct Distribution -->
+                <div class="dist-panel" id="dist-direct">
+                    <div class="dist-form-card">
+                        <h3>توزيع استمارات لمشترك</h3>
+                        <div class="form-group">
+                            <label>المشترك</label>
+                            <input type="text" id="searchDistParticipant" class="form-control" placeholder="بحث باسم المشترك..." style="margin-bottom: 8px;">
+                            <select id="distParticipantSelect" class="form-control" size="5" style="height: auto;">
+                                <option value="">-- اختر المشترك --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>طريقة الاختيار</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="distMethod" value="auto" checked> تلقائي (أول متاحة)</label>
+                                <label class="radio-label"><input type="radio" name="distMethod" value="manual"> يدوي (اختر بنفسك)</label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="autoCountGroup">
+                            <label>عدد الاستمارات</label>
+                            <input type="number" id="distCount" class="form-control" min="1" max="302" value="1">
+                        </div>
+                        <div class="form-group hidden" id="manualSelectGroup">
+                            <label>اختر الاستمارات</label>
+                            <div class="forms-selector" id="formsSelector"></div>
+                        </div>
+                        <!-- الحقل الجديد: المبلغ -->
+                        <div class="form-group">
+                            <label>مبلغ الاشتراك</label>
+                            <input type="number" id="distAmount" class="form-control" placeholder="أدخل المبلغ (مثال: 2000)">
+                        </div>
+                        <div class="form-group">
+                            <label>ملاحظات</label>
+                            <textarea id="distNotes" class="form-control" rows="2" placeholder="ملاحظة اختيارية..."></textarea>
+                        </div>
+                        <button class="btn-primary btn-full" id="distributeBtn">📤 توزيع الاستمارات</button>
+                        <button class="btn-secondary btn-full hidden" id="distPrintParticipantBtn" style="margin-top:8px">🖨️ طباعة إيصال المشترك</button>
+                    </div>
+                </div>
+
+                <!-- Representative Reservation -->
+                <div class="dist-panel hidden" id="dist-representative">
+                    <div class="dist-form-card">
+                        <h3>حجز استمارات عند مندوب</h3>
+                        <div class="form-group">
+                            <label>المندوب</label>
+                            <input type="text" id="searchDistRep" class="form-control" placeholder="بحث باسم المندوب..." style="margin-bottom: 8px;">
+                            <select id="distRepSelect" class="form-control" size="5" style="height: auto;">
+                                <option value="">-- اختر المندوب --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>طريقة الاختيار</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="distRepMethod" value="auto" checked> تلقائي (أول متاحة)</label>
+                                <label class="radio-label"><input type="radio" name="distRepMethod" value="manual"> يدوي (اختر بنفسك)</label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="autoCountGroupRep">
+                            <label>عدد الاستمارات</label>
+                            <input type="number" id="distRepCount" class="form-control" min="1" max="302" value="1">
+                        </div>
+                        <div class="form-group hidden" id="manualSelectGroupRep">
+                            <label>اختر الاستمارات</label>
+                            <div class="forms-selector" id="formsSelectorRep"></div>
+                        </div>
+                        <!-- الحقول الجديدة: الهاتف والمبلغ -->
+                        <div class="form-group">
+                            <label>رقم هاتف المستلم (اختياري)</label>
+                            <input type="tel" id="distRepPhone" class="form-control" placeholder="05xxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>مبلغ الاشتراك</label>
+                            <input type="number" id="distRepAmount" class="form-control" placeholder="أدخل المبلغ">
+                        </div>
+                        <div class="form-group">
+                            <label>ملاحظات</label>
+                            <textarea id="distRepNotes" class="form-control" rows="2" placeholder="ملاحظة اختيارية..."></textarea>
+                        </div>
+                        <button class="btn-primary btn-full" id="reserveBtn">🔒 حجز الاستمارات</button>
+                        <button class="btn-secondary btn-full hidden" id="distPrintRepBtn" style="margin-top:8px">🖨️ طباعة إيصال المندوب</button>
+                    </div>
+                </div>
+
+                <!-- History -->
+                <div class="dist-panel hidden" id="dist-history">
+                    <div class="page-toolbar">
+                        <div class="toolbar-filters">
+                            <button class="filter-btn active" data-hist="all">الكل</button>
+                            <button class="filter-btn" data-hist="distributed">موزعة</button>
+                            <button class="filter-btn" data-hist="reserved">محجوزة</button>
+                            <button class="filter-btn" data-hist="cancelled">ملغاة</button>
+                        </div>
+                        <input type="text" id="histSearch" placeholder="بحث..." class="search-input">
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="historyTable">
+                            <thead>
+                                <tr><th>رقم الاستمارة</th><th>الصفحات</th><th>النوع</th><th>المستلم</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody id="historyBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REPORTS PAGE -->
+            <section class="page hidden" id="page-reports">
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>📊 حصيلة الدورة الحالية</h3>
+                        <div class="report-content" id="reportCycleSummary">
+                            <div class="empty-state"><span>📊</span><p>اختر دورة لعرض التقرير</p></div>
+                        </div>
+                        <button class="btn-print" onclick="window.printReport('cycle')">🖨️ طباعة</button>
+                    </div>
+                    <div class="report-card">
+                        <h3>🧑‍💼 تقرير المندوبين</h3>
+                        <div class="report-content" id="reportRepresentatives">
+                            <div class="empty-state"><span>🧑‍💼</span><p>لا توجد بيانات</p></div>
+                        </div>
+                        <button class="btn-print" onclick="window.printReport('representatives')">🖨️ طباعة</button>
+                    </div>
+                    <div class="report-card full-width">
+                        <h3>📈 مقارنة الدورات</h3>
+                        <div class="report-content" id="reportCyclesComparison">
+                            <div class="empty-state"><span>📈</span><p>تحتاج أكثر من دورة للمقارنة</p></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CYCLES PAGE -->
+            <section class="page hidden" id="page-cycles">
+                <div class="page-toolbar">
+                    <button class="btn-primary" id="addCycleBtn"><span>+</span> دورة جديدة</button>
+                </div>
+                <div class="cycles-list" id="cyclesList"></div>
+            </section>
+
+            <!-- SETTINGS PAGE (تمت إضافة إعدادات الطباعة الجديدة هنا) -->
+            <section class="page hidden" id="page-settings">
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3>💾 إدارة البيانات</h3>
+                        <div class="settings-actions">
+                            <button class="btn-secondary" id="exportBtnSettings">📤 تصدير جميع البيانات (JSON)</button>
+                            <button class="btn-secondary" id="importBtnSettings">📥 استيراد البيانات</button>
+                            <button class="btn-danger" id="clearDataBtn">🗑️ مسح جميع البيانات</button>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <h3>ℹ️ معلومات النظام</h3>
+                        <div class="dash-stats">
+                            <div class="dash-stat-row"><span>إجمالي الدورات</span><span class="dash-stat-val" id="info-cycles">0</span></div>
+                            <div class="dash-stat-row"><span>إجمالي المشتركين</span><span class="dash-stat-val" id="info-participants">0</span></div>
+                            <div class="dash-stat-row"><span>إجمالي المندوبين</span><span class="dash-stat-val" id="info-representatives">0</span></div>
+                            <div class="dash-stat-row"><span>إجمالي التوزيعات</span><span class="dash-stat-val" id="info-distributions">0</span></div>
+                        </div>
+                    </div>
+                    <div class="settings-card full-width">
+                        <h3>🖨️ إعدادات نصوص الطباعة (A4)</h3>
+                        <div class="form-group">
+                            <label>الترويسة (البرنامج)</label>
+                            <input type="text" id="settingPrintTitle" class="form-control" value="برنامج لا تهجروا القرآن والصدقة">
+                        </div>
+                        <div class="form-group">
+                            <label>الترويسة الفرعية (الشهر)</label>
+                            <input type="text" id="settingPrintSubtitle" class="form-control" value="ختمات شهر رجب وشعبان">
+                        </div>
+                        <div class="form-group">
+                            <label>الحديث الشريف</label>
+                            <textarea id="settingPrintHadith" class="form-control" rows="2">قال رسول الله (ص): (إن القلوب تصدأ كما يصدأ الحديد قيل يا رسول الله وما جلاؤها قال قراءة القرآن وذكر الموت)</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>واجبات المشترك (كل سطر يعتبر نقطة جديدة)</label>
+                            <textarea id="settingPrintDuties" class="form-control" rows="6">قراءة الورقة القرآنية ستون مرة خلال الشهرين.
+قراءة زيارة عاشوراء ثمان مرات خلال الشهرين.
+قراءة دعاء الفرج (120) مرة خلال الشهرين.
+الصلاة على محمد وآل محمد (400) مرة خلال الشهرين.
+قراءة دعاء الندبة مرتين خلال الشهرين.
+دفع (2,000) ر.ع بنية الصدقة المطلقة (هذا المبلغ يساعد في أعمال المؤسسة للأيتام والمتعففين).</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>نية القراءة</label>
+                            <textarea id="settingPrintNiya" class="form-control" rows="3">نية القراءة :- اصالة عن نفسي ونيابة عن امواتي وعن المشتركين وامواتهم ومشتركي مؤسسة شباب الحسين (ع) الاحياء والاموات ونخص بالذكر الامام الحجة (عج) وشهدائنا الابرار.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>الملاحظة السفلية</label>
+                            <textarea id="settingPrintNote" class="form-control" rows="2">ملاحظة :- على المشترك ان يتعهد امام الله ورسوله بالالتزام بالقراءة وإلا ان لم يستطع فليكلف من ينوب مقامه بالقراءة.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>الثواب الذي يحصل عليه المشترك</label>
+                            <textarea id="settingPrintRewards" class="form-control" rows="6">أكثر من (120) ختمة قرآنية.
+أكثر من (600,0) زيارة عاشوراء.
+أكثر من (144,000) دعاء الفرج.
+أكثر من (480,000) صلاة على محمد وآل محمد.
+أكثر من (2,400) دعاء الندبة.
+ثواب الصدقة الشهرية.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>تذييل (النهاية)</label>
+                            <textarea id="settingPrintFooter" class="form-control" rows="3">يمكن الحصول على نفس هذا الثواب للميت والمتوفى من خلال دفع مبلغ (4,000 ر.ع) شهرياً أي (48,000 ر.ع) سنوياً.
+مبيعات عام 2024 التي تم انجازها بفضل الله وبفضل اشتراكاتكم</textarea>
+                        </div>
+                        <button class="btn-primary" id="saveSettingsBtn">حفظ إعدادات الطباعة</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    <!-- Participant Modal -->
+    <div class="modal-overlay hidden" id="participantModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="participantModalTitle">إضافة مشترك جديد</h2>
+                <button class="modal-close" data-modal="participantModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="participantId">
+                <div class="form-group">
+                    <label>الاسم الكامل *</label>
+                    <input type="text" id="participantName" class="form-control" placeholder="أدخل اسم المشترك">
+                </div>
+                <div class="form-group">
+                    <label>المندوب (اختياري)</label>
+                    <select id="participantRep" class="form-control">
+                        <option value="">-- مشترك مستقل --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف (اختياري)</label>
+                    <input type="tel" id="participantPhone" class="form-control" placeholder="05xxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="participantNotes" class="form-control" rows="2" placeholder="ملاحظة اختيارية..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="participantModal">إلغاء</button>
+                <button class="btn-primary" id="saveParticipantBtn">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Representative Modal -->
+    <div class="modal-overlay hidden" id="representativeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="repModalTitle">إضافة مندوب جديد</h2>
+                <button class="modal-close" data-modal="representativeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="repId">
+                <div class="form-group">
+                    <label>الاسم الكامل *</label>
+                    <input type="text" id="repName" class="form-control" placeholder="أدخل اسم المندوب">
+                </div>
+                <div class="form-group">
+                    <label>المنطقة (اختياري)</label>
+                    <input type="text" id="repArea" class="form-control" placeholder="المنطقة أو الحي">
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف (اختياري)</label>
+                    <input type="tel" id="repPhone" class="form-control" placeholder="05xxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="repNotes" class="form-control" rows="2" placeholder="ملاحظة اختيارية..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="representativeModal">إلغاء</button>
+                <button class="btn-primary" id="saveRepBtn">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cycle Modal -->
+    <div class="modal-overlay hidden" id="cycleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="cycleModalTitle">إنشاء دورة جديدة</h2>
+                <button class="modal-close" data-modal="cycleModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cycleId">
+                <div class="form-group">
+                    <label>اسم الدورة *</label>
+                    <input type="text" id="cycleName" class="form-control" placeholder="مثال: الدورة الأولى 2026">
+                </div>
+                <div class="form-group">
+                    <label>رقم الدورة في السنة</label>
+                    <select id="cycleNumber" class="form-control">
+                        <option value="1">الدورة الأولى (يناير - فبراير)</option>
+                        <option value="2">الدورة الثانية (مارس - أبريل)</option>
+                        <option value="3">الدورة الثالثة (مايو - يونيو)</option>
+                        <option value="4">الدورة الرابعة (يوليو - أغسطس)</option>
+                        <option value="5">الدورة الخامسة (سبتمبر - أكتوبر)</option>
+                        <option value="6">الدورة السادسة (نوفمبر - ديسمبر)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ البداية</label>
+                    <input type="date" id="cycleStart" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>تاريخ الانتهاء</label>
+                    <input type="date" id="cycleEnd" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="cycleNotes" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="cycleModal">إلغاء</button>
+                <button class="btn-primary" id="saveCycleBtn">إنشاء الدورة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Details Modal (تمت إضافة حقول التعديل هنا) -->
+    <div class="modal-overlay hidden" id="formDetailsModal">
+        <div class="modal modal-md">
+            <div class="modal-header">
+                <h2 id="formDetailsTitle">تفاصيل الاستمارة</h2>
+                <div class="modal-header-actions">
+                    <button class="btn-primary" id="btnPrintSingleForm">🖨️ طباعة الاستمارة</button>
+                    <button class="modal-close" data-modal="formDetailsModal">✕</button>
+                </div>
+            </div>
+            <div class="modal-body" id="formDetailsContent"></div>
+
+            <!-- قسم التعديل -->
+            <div class="modal-body hidden" id="formEditSection" style="border-top: 1px solid var(--border); padding-top: 16px;">
+                <h3 style="font-size: 15px; margin-bottom: 12px;" id="formEditSectionTitle">تعديل التوزيع</h3>
+                <input type="hidden" id="editDistId">
+                <div class="form-group" id="editParticipantGroup">
+                    <label>المشترك</label>
+                    <select id="editParticipantSelect" class="form-control"></select>
+                </div>
+                <div class="form-group" id="editPhoneGroup">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="editPhone" class="form-control" placeholder="05xxxxxxxx">
+                </div>
+                <div class="form-group" id="editPaidAmountGroup">
+                    <label>المبلغ المدفوع</label>
+                    <input type="number" id="editPaidAmount" class="form-control" placeholder="0">
+                </div>
+                <button class="btn-primary" id="saveFormEditBtn">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Receipt Modal -->
+    <div class="modal-overlay hidden" id="printModal">
+        <div class="modal modal-lg">
+            <div class="modal-header no-print">
+                <h2 id="printModalTitle">الإيصال</h2>
+                <div class="modal-header-actions">
+                    <button class="btn-primary" onclick="window.print()">🖨️ طباعة</button>
+                    <button class="modal-close" data-modal="printModal">✕</button>
+                </div>
+            </div>
+            <div class="modal-body print-content" id="printContent">
+                <!-- Print content generated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 id="confirmTitle">تأكيد</h2>
+                <button class="modal-close" data-modal="confirmModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="confirmModal">إلغاء</button>
+                <button class="btn-danger" id="confirmOkBtn">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/forms-data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
