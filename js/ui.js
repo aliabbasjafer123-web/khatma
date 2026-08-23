@@ -1,15 +1,16 @@
 // ======================================================
-// ui.js - مساعدات واجهة المستخدم
+// ui.js - واجهات المستخدم والطباعة والمودالات
 // ======================================================
 
-// ---- التوست ----
+// ---- نظام الإشعارات (Toast) ----
 const Toast = {
-  show(msg, type = 'info', duration = 3000) {
+  show(msg, type = 'info', duration = 3500) {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span class="toast-msg">${msg}</span>`;
+    toast.className = 'toast ' + type;
+    toast.innerHTML = '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span><span class="toast-msg">' + msg + '</span>';
     container.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('fade-out');
@@ -22,7 +23,7 @@ const Toast = {
   info(msg) { this.show(msg, 'info'); }
 };
 
-// ---- المودالات ----
+// ---- المودالات (Modals) ----
 const Modal = {
   open(id) {
     const el = document.getElementById(id);
@@ -46,7 +47,6 @@ const Modal = {
   }
 };
 
-// إغلاق المودالات عند الضغط على Escape أو الخلفية
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') Modal.closeAll();
 });
@@ -59,169 +59,60 @@ document.addEventListener('click', e => {
   }
 });
 
-// ---- التأكيد ----
-let _confirmCallback = null;
-
-function showConfirm(title, message, onConfirm, danger = true) {
+function showConfirm(title, message, onConfirm) {
+  const modal = document.getElementById('confirmModal');
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMessage').textContent = message;
-  _confirmCallback = onConfirm;
-  const btn = document.getElementById('confirmOkBtn');
-  btn.className = danger ? 'btn-danger' : 'btn-primary';
-  btn.textContent = 'تأكيد';
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.onclick = () => {
+    Modal.close('confirmModal');
+    onConfirm();
+  };
   Modal.open('confirmModal');
 }
 
-document.getElementById('confirmOkBtn').addEventListener('click', () => {
-  if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
-  Modal.close('confirmModal');
-});
-
-// ---- التاريخ والوقت ----
-function formatDate(isoString) {
-  if (!isoString) return '-';
-  const d = new Date(isoString);
-  return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+function formatDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function formatDateTime(isoString) {
-  if (!isoString) return '-';
-  const d = new Date(isoString);
-  return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+function formatDateTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 }
 
-function timeAgo(isoString) {
-  if (!isoString) return '';
-  const diff = Date.now() - new Date(isoString).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'الآن';
-  if (minutes < 60) return `منذ ${minutes} دقيقة`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
-  const days = Math.floor(hours / 24);
-  return `منذ ${days} يوم`;
+function timeAgo(iso) {
+  if (!iso) return '';
+  const now = new Date();
+  const d = new Date(iso);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'الآن';
+  if (diff < 3600) return 'منذ ' + Math.floor(diff / 60) + ' دقيقة';
+  if (diff < 86400) return 'منذ ' + Math.floor(diff / 3600) + ' ساعة';
+  return 'منذ ' + Math.floor(diff / 86400) + ' يوم';
 }
 
 function updateClock() {
   const el = document.getElementById('datetime');
-  if (!el) return;
-  const now = new Date();
-  el.textContent = now.toLocaleString('ar-SA', {
-    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' | ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+  }
 }
-
+setInterval(updateClock, 1000);
 updateClock();
-setInterval(updateClock, 30000);
 
-// ---- الطباعة ----
-window.printReport = function(type) {
-  window.print();
-};
-
-// ---- إيصال المشترك ----
-function printParticipantReceipt(participantId, cycleId) {
-  const participant = ParticipantService.getById(participantId);
-  const cycle = CycleService.getById(cycleId);
-  if (!participant || !cycle) return;
-
-  const forms = ParticipantService.getForms(participantId, cycleId);
-  if (forms.length === 0) {
-    Toast.warning('لا توجد استمارات لهذا المشترك في هذه الدورة');
-    return;
-  }
-
+// ---- إنشاء كود صفحة الطباعة A4 المعتمد ----
+function generateFormPrintHtml(form, participantName = '.....................') {
   const s = SettingsService.getSettings();
-  const dutiesHtml = s.printDuties ? s.printDuties.split('\n').map(l => `<li>${l}</li>`).join('') : '';
-  const rewardsHtml = s.printRewards ? s.printRewards.split('\n').map(l => `<li>${l}</li>`).join('') : '';
+  const dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
 
-  const pagesHtml = forms.map(d => {
-    const form = getFormById(d.formId);
-    if (!form) return '';
-    return `
-      <div class="a4-page">
-        <div class="print-border">
-          <div class="print-header">
-            <h3>${s.printTitle || ''}</h3>
-            <p>${s.printSubtitle || ''}</p>
-          </div>
-          <div class="print-info-row">
-            <span>اسم المشترك: <strong>${participant.name}</strong></span>
-            <span>رقم الصفحة في التطبيق / <strong>${form.id}</strong></span>
-          </div>
-          <div class="print-hadith">
-            ${s.printHadith ? s.printHadith.replace(/\n/g, '<br>') : ''}
-          </div>
-          <div class="print-aya-box">
-            تقرأ من صفحة ( <strong>${form.startPage}</strong> ) قال تعالى : (( <strong>${form.startVerse}</strong> )) والصفحة ( <strong>${form.endPage}</strong> ) التي تنتهي بقوله تعالى (( <strong>${form.endVerse}</strong> ))
-          </div>
-          <div class="print-duties">
-            <div class="print-duties-title">واجبات المشترك (خلال شهر رجب وشعبان):</div>
-            <ol>${dutiesHtml}</ol>
-            <div class="print-duties-note">
-              ${s.printNiya ? `<span class="red-text">نية القراءة :-</span> ${s.printNiya.replace('نية القراءة :-', '').trim()}<br>` : ''}
-              ${s.printNote ? `<span class="red-text">ملاحظة :-</span> ${s.printNote.replace('ملاحظة :-', '').trim()}` : ''}
-            </div>
-          </div>
-          <div class="print-reward-box">
-            <div class="print-duties-title red-text" style="text-decoration:none">الثواب الذي يحصل عليه المشترك (خلال شهر رجب وشعبان):</div>
-            <div class="qr-placeholder">
-              QR Code
-              <span>نزل التطبيق من هنا</span>
-            </div>
-            <ul>${rewardsHtml}</ul>
-            <div style="clear:both"></div>
-          </div>
-          <div class="print-stats-box">
-            <div class="print-stats-title">${s.printFooter ? s.printFooter.split('\n').pop() : ''}</div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700">
-              <div>المبلغ المصروف الكلي: (127,500,92) ر.ع</div>
-              <div>عدد المستفيدين الكلي: (1,234) مستفيد</div>
-            </div>
-            <hr style="border:1px solid #8b0000; margin:5px 0">
-            <ul style="font-size:11px">
-              <li>صرف كفالة: (24,340,000 ر.ع) | عدد المستفيدين: (343)</li>
-              <li>صرف تعذية: (43,000,000 ر.ع) | عدد المستفيدين: (455)</li>
-              <li>صرف لحوم: (12,500,000 ر.ع) | عدد المستفيدين: (120)</li>
-              <li>صرف ايتام: (34,000,000 ر.ع) | عدد المستفيدين: (150)</li>
-              <li>صرف زواج: (5,000,000 ر.ع) | عدد المستفيدين: (10)</li>
-              <li>صرف اعمار: (8,660,000 ر.ع) | عدد المستفيدين: (20)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  const content = `<div class="print-content" style="padding:0; background:none">${pagesHtml}</div>`;
-
-  document.getElementById('printModalTitle').textContent = `إيصال: ${participant.name}`;
-  document.getElementById('printContent').innerHTML = content;
-  Modal.open('printModal');
-}
-
-// ---- طباعة استمارة واحدة A4 ----
-function printSingleFormA4(formId) {
-  const form = getFormById(formId);
-  if (!form) return;
-
-  const cycleId = currentCycle?.id;
-  let participantName = '.....................';
-  
-  if (cycleId) {
-    const dist = DistributionService.getFormStatus(formId, cycleId);
-    if (dist.status === 'distributed' && dist.participantId) {
-      const p = ParticipantService.getById(dist.participantId);
-      if (p) participantName = p.name;
-    }
-  }
-
-  const s = SettingsService.getSettings();
-  const dutiesHtml = s.printDuties ? s.printDuties.split('\n').map(l => `<li>${l}</li>`).join('') : '';
-  const rewardsHtml = s.printRewards ? s.printRewards.split('\n').map(l => `<li>${l}</li>`).join('') : '';
-
-  const contentHtml = `
+  return `
     <div class="a4-page">
       <div class="print-border">
         <div class="print-header">
@@ -236,14 +127,14 @@ function printSingleFormA4(formId) {
           ${s.printHadith ? s.printHadith.replace(/\n/g, '<br>') : ''}
         </div>
         <div class="print-aya-box">
-          تقرأ من صفحة ( <strong>${form.startPage}</strong> ) قال تعالى : (( <strong>${form.startVerse}</strong> )) والصفحة ( <strong>${form.endPage}</strong> ) التي تنتهي بقوله تعالى (( <strong>${form.endVerse}</strong> ))
+          تقرأ من صفحة ( <strong>${form.startPage}</strong> ) قال تعالى : (( <strong>${form.startVerse || ''}</strong> )) والصفحة ( <strong>${form.endPage}</strong> ) التي تنتهي بقوله تعالى (( <strong>${form.endVerse || ''}</strong> ))
         </div>
         <div class="print-duties">
           <div class="print-duties-title">واجبات المشترك (خلال شهر رجب وشعبان):</div>
           <ol>${dutiesHtml}</ol>
           <div class="print-duties-note">
-            ${s.printNiya ? `<span class="red-text">نية القراءة :-</span> ${s.printNiya.replace('نية القراءة :-', '').trim()}<br>` : ''}
-            ${s.printNote ? `<span class="red-text">ملاحظة :-</span> ${s.printNote.replace('ملاحظة :-', '').trim()}` : ''}
+            ${s.printNiya ? '<span class="red-text">نية القراءة :-</span> ' + s.printNiya.replace('نية القراءة :-', '').trim() + '<br>' : ''}
+            ${s.printNote ? '<span class="red-text">ملاحظة :-</span> ' + s.printNote.replace('ملاحظة :-', '').trim() : ''}
           </div>
         </div>
         <div class="print-reward-box">
@@ -264,142 +155,178 @@ function printSingleFormA4(formId) {
           <hr style="border:1px solid #8b0000; margin:5px 0">
           <ul style="font-size:11px">
             <li>صرف كفالة: (24,340,000 ر.ع) | عدد المستفيدين: (343)</li>
-            <li>صرف تعذية: (43,000,000 ر.ع) | عدد المستفيدين: (455)</li>
+            <li>صرف تغذية: (43,000,000 ر.ع) | عدد المستفيدين: (455)</li>
             <li>صرف لحوم: (12,500,000 ر.ع) | عدد المستفيدين: (120)</li>
-            <li>صرف ايتام: (34,000,000 ر.ع) | عدد المستفيدين: (150)</li>
+            <li>صرف أيتام: (34,000,000 ر.ع) | عدد المستفيدين: (150)</li>
             <li>صرف زواج: (5,000,000 ر.ع) | عدد المستفيدين: (10)</li>
-            <li>صرف اعمار: (8,660,000 ر.ع) | عدد المستفيدين: (20)</li>
+            <li>صرف إعمار: (8,660,000 ر.ع) | عدد المستفيدين: (20)</li>
           </ul>
         </div>
       </div>
     </div>
   `;
-
-  document.getElementById('printModalTitle').textContent = `طباعة استمارة رقم ${formId}`;
-  document.getElementById('printContent').innerHTML = `<div class="print-content" style="padding:0; background:none">${contentHtml}</div>`;
-  Modal.open('printModal');
-  
-  // نعطي المتصفح مهلة قصيرة لعرض المودال ثم نستدعي الطباعة
-  setTimeout(() => {
-    window.print();
-  }, 300);
 }
 
-// ---- إيصال المندوب ----
-function printRepresentativeReceipt(repId, cycleId) {
-  const rep = RepresentativeService.getById(repId);
-  const cycle = CycleService.getById(cycleId);
-  if (!rep || !cycle) return;
+// دالة تنفيذ الطباعة المباشرة
+function triggerPrint(htmlContent, title = 'طباعة') {
+  // تحديث الحاوية المخصصة للطباعة المباشرة
+  let printArea = document.getElementById('directPrintArea');
+  if (!printArea) {
+    printArea = document.createElement('div');
+    printArea.id = 'directPrintArea';
+    document.body.appendChild(printArea);
+  }
+  printArea.innerHTML = htmlContent;
 
-  const reserved = RepresentativeService.getReservedForms(repId, cycleId);
-  const distributed = RepresentativeService.getDistributedForms(repId, cycleId);
-  const allForms = [...reserved, ...distributed];
+  // إعداد وعرض نافذة المعاينة
+  const printModalTitle = document.getElementById('printModalTitle');
+  const printContent = document.getElementById('printContent');
+  if (printModalTitle) printModalTitle.textContent = title;
+  if (printContent) printContent.innerHTML = htmlContent;
+  
+  Modal.open('printModal');
+}
 
-  if (allForms.length === 0) {
-    Toast.warning('لا توجد استمارات لهذا المندوب في هذه الدورة');
+function doPrintNow() {
+  window.print();
+}
+
+// ---- طباعة استمارة واحدة ----
+function printSingleFormA4(formId) {
+  const form = getFormById(formId);
+  if (!form) return;
+
+  const cycle = CycleService.getActive();
+  let participantName = '.....................';
+  if (cycle) {
+    const dist = DistributionService.getFormStatus(formId, cycle.id);
+    if (dist && dist.status === 'distributed' && dist.participantId) {
+      const p = ParticipantService.getById(dist.participantId);
+      if (p) participantName = p.name;
+    }
+  }
+
+  const contentHtml = generateFormPrintHtml(form, participantName);
+  triggerPrint(contentHtml, 'طباعة استمارة رقم ' + formId);
+}
+
+// ---- طباعة إيصالات المشترك ----
+function printParticipantReceipt(participantId, cycleId) {
+  const participant = ParticipantService.getById(participantId);
+  const cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
+  if (!participant) {
+    Toast.error('المشترك غير موجود');
+    return;
+  }
+  if (!cycle) {
+    Toast.error('الرجاء اختيار دورة نشطة أولاً');
     return;
   }
 
-  const db = loadDB();
+  const forms = ParticipantService.getForms(participantId, cycle.id);
+  if (forms.length === 0) {
+    Toast.warning('لا توجد استمارات موزعة لهذا المشترك في هذه الدورة');
+    return;
+  }
 
-  let rows = allForms.map(d => {
+  const pagesHtml = forms.map(d => {
     const form = getFormById(d.formId);
-    const participant = d.participantId ? ParticipantService.getById(d.participantId) : null;
-    const statusLabel = d.status === 'reserved' ? '🔒 محجوزة' : '✅ موزعة';
-    return `
-      <tr>
-        <td class="form-id">${d.formId}</td>
-        <td>${form ? `${form.startPage} - ${form.endPage}` : '-'}</td>
-        <td>${participant ? participant.name : '-'}</td>
-        <td>${statusLabel}</td>
-      </tr>
-    `;
+    return form ? generateFormPrintHtml(form, participant.name) : '';
   }).join('');
 
-  const content = `
-    <div class="bismillah">﷽</div>
-    <div class="receipt-header">
-      <h2>🧑‍💼 تقرير المندوب</h2>
-      <p class="sub">ختمة القرآن الكريم - ${cycle.name}</p>
-    </div>
-    <div class="receipt-info">
-      <div class="receipt-info-item">
-        <label>اسم المندوب</label>
-        <span>${rep.name}</span>
-      </div>
-      <div class="receipt-info-item">
-        <label>المنطقة</label>
-        <span>${rep.area || '-'}</span>
-      </div>
-      <div class="receipt-info-item">
-        <label>الدورة</label>
-        <span>${cycle.name}</span>
-      </div>
-      <div class="receipt-info-item">
-        <label>تاريخ الطباعة</label>
-        <span>${new Date().toLocaleDateString('ar-SA')}</span>
-      </div>
-    </div>
-    <div class="receipt-total">
-      <span class="total-label">إجمالي الاستمارات | محجوزة: ${reserved.length} | موزعة: ${distributed.length}</span>
-      <span class="total-val">${allForms.length}</span>
-    </div>
-    <table class="receipt-table">
-      <thead>
-        <tr>
-          <th>رقم الاستمارة</th>
-          <th>الصفحات</th>
-          <th>المشترك</th>
-          <th>الحالة</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="receipt-footer">
-      <p>جزاكم الله خيراً على جهودكم في خدمة القرآن الكريم</p>
-    </div>
-  `;
-
-  document.getElementById('printModalTitle').textContent = `تقرير المندوب: ${rep.name}`;
-  document.getElementById('printContent').innerHTML = content;
-  Modal.open('printModal');
+  triggerPrint(pagesHtml, 'إيصال المشترك: ' + participant.name + ' (' + forms.length + ' استمارة)');
 }
 
-// ---- تعبئة قوائم الاختيار ----
-function populateParticipantSelects() {
+// ---- طباعة استمارات المندوب ----
+function printRepresentativeReceipt(repId, cycleId) {
+  const rep = RepresentativeService.getById(repId);
+  const cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
+  if (!rep) {
+    Toast.error('المندوب غير موجود');
+    return;
+  }
+  if (!cycle) {
+    Toast.error('الرجاء اختيار دورة نشطة أولاً');
+    return;
+  }
+
+  const reserved = RepresentativeService.getReservedForms(repId, cycle.id);
+  if (reserved.length === 0) {
+    Toast.warning('لا توجد استمارات محجوزة لهذا المندوب في هذه الدورة');
+    return;
+  }
+
+  const pagesHtml = reserved.map(d => {
+    const form = getFormById(d.formId);
+    return form ? generateFormPrintHtml(form, 'مندوب: ' + rep.name) : '';
+  }).join('');
+
+  triggerPrint(pagesHtml, 'إيصال عهدة المندوب: ' + rep.name + ' (' + reserved.length + ' استمارة)');
+}
+
+// ---- تعبئة القوائم المنسدلة ----
+function populateParticipantSelects(searchQuery = '') {
   const participants = ParticipantService.getAll();
-  ['distParticipantSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const val = el.value;
-    el.innerHTML = '<option value="">-- اختر المشترك --</option>';
+  const q = (searchQuery || '').toLowerCase().trim();
+  const filtered = q ? participants.filter(p => p.name.toLowerCase().includes(q) || (p.phone && p.phone.includes(q))) : participants;
+
+  const select = document.getElementById('distParticipantSelect');
+  if (select) {
+    const curVal = select.value;
+    select.innerHTML = '<option value="">-- اختر المشترك (' + filtered.length + ') --</option>';
+    filtered.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name + (p.phone ? ' (' + p.phone + ')' : '');
+      select.appendChild(opt);
+    });
+    if (curVal && filtered.some(p => p.id === curVal)) select.value = curVal;
+  }
+
+  const editSelect = document.getElementById('editParticipantSelect');
+  if (editSelect) {
+    const curVal = editSelect.value;
+    editSelect.innerHTML = '<option value="">-- اختر المشترك --</option>';
     participants.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = p.name;
-      el.appendChild(opt);
+      opt.textContent = p.name + (p.phone ? ' (' + p.phone + ')' : '');
+      editSelect.appendChild(opt);
     });
-    if (val) el.value = val;
-  });
+    if (curVal) editSelect.value = curVal;
+  }
 }
 
-function populateRepSelects() {
+function populateRepSelects(searchQuery = '') {
   const reps = RepresentativeService.getAll();
-  ['distRepSelect', 'participantRep'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const val = el.value;
-    el.innerHTML = id === 'participantRep'
-      ? '<option value="">-- مشترك مستقل --</option>'
-      : '<option value="">-- اختر المندوب --</option>';
+  const q = (searchQuery || '').toLowerCase().trim();
+  const filtered = q ? reps.filter(r => r.name.toLowerCase().includes(q) || (r.area && r.area.toLowerCase().includes(q))) : reps;
+
+  const repSelect = document.getElementById('distRepSelect');
+  if (repSelect) {
+    const curVal = repSelect.value;
+    repSelect.innerHTML = '<option value="">-- اختر المندوب (' + filtered.length + ') --</option>';
+    filtered.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.name + (r.area ? ' [' + r.area + ']' : '');
+      repSelect.appendChild(opt);
+    });
+    if (curVal && filtered.some(r => r.id === curVal)) repSelect.value = curVal;
+  }
+
+  const partRepSelect = document.getElementById('participantRep');
+  if (partRepSelect) {
+    const curVal = partRepSelect.value;
+    partRepSelect.innerHTML = '<option value="">-- مشترك مستقل --</option>';
     reps.forEach(r => {
       const opt = document.createElement('option');
       opt.value = r.id;
-      opt.textContent = r.name + (r.area ? ` (${r.area})` : '');
-      el.appendChild(opt);
+      opt.textContent = r.name + (r.area ? ' [' + r.area + ']' : '');
+      partRepSelect.appendChild(opt);
     });
-    if (val) el.value = val;
-  });
+    if (curVal) partRepSelect.value = curVal;
+  }
 }
 
 function populateCycleSelects() {
@@ -417,4 +344,3 @@ function populateCycleSelects() {
     });
   }
 }
-
