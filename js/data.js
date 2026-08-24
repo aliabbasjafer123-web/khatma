@@ -66,28 +66,28 @@ var DEFAULT_DB = {
 
 // تحميل البيانات: نعيد النسخة الموجودة في الذاكرة (والتي تتزامن مع Firebase)
 function loadDB() {
-  if (MEMORY_DB) return MEMORY_DB;
-
-  try {
-    var raw = localStorage.getItem(DB_KEY);
-    if (!raw) {
-      var initial = JSON.parse(JSON.stringify(DEFAULT_DB));
-      return initial;
+  var db = MEMORY_DB;
+  if (!db) {
+    try {
+      var raw = localStorage.getItem(DB_KEY);
+      if (!raw) {
+        return JSON.parse(JSON.stringify(DEFAULT_DB));
+      }
+      db = JSON.parse(raw);
+    } catch (e) {
+      console.error('Error loading local DB', e);
+      db = JSON.parse(JSON.stringify(DEFAULT_DB));
     }
-    var db = JSON.parse(raw);
-    
-    return {
-      cycles: db.cycles || [],
-      participants: db.participants || [],
-      representatives: db.representatives || [],
-      distributions: db.distributions || [],
-      activity: db.activity || [],
-      settings: { ...DEFAULT_DB.settings, ...(db.settings || {}) }
-    };
-  } catch (e) {
-    console.error('Error loading DB:', e);
-    return JSON.parse(JSON.stringify(DEFAULT_DB));
   }
+
+  return {
+    cycles: db.cycles || [],
+    participants: db.participants || [],
+    representatives: db.representatives || [],
+    distributions: db.distributions || [],
+    activity: db.activity || [],
+    settings: { ...DEFAULT_DB.settings, ...(db.settings || {}) }
+  };
 }
 
 // حفظ البيانات: نحفظها محلياً ونرفعها فوراً للسحابة لتتزامن عند الأصدقاء!
