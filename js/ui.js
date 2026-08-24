@@ -106,8 +106,8 @@ updateClock();
 
 function generateFormPrintHtml(form, participantName = '.....................') {
   var s = SettingsService.getSettings();
-  var dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
-  var rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
+  var dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
+  var rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
 
   return `
     <div class="a4-page">
@@ -121,43 +121,27 @@ function generateFormPrintHtml(form, participantName = '.....................') 
           <span>رقم الصفحة في التطبيق / <strong>${form.id}</strong></span>
         </div>
         <div class="print-hadith">
-          ${s.printHadith ? s.printHadith.replace(/\n/g, '<br>') : ''}
+          ${s.printHadith ? s.printHadith.split('\n').filter(Boolean).map(h => '<div style="margin-bottom:4px;">' + h + '</div>').join('') : ''}
         </div>
         <div class="print-aya-box">
           تقرأ من صفحة ( <strong>${form.startPage}</strong> ) قال تعالى : (( <strong>${form.startVerse || ''}</strong> )) والصفحة ( <strong>${form.endPage}</strong> ) التي تنتهي بقوله تعالى (( <strong>${form.endVerse || ''}</strong> ))
         </div>
         <div class="print-duties">
           <div class="print-duties-title">واجبات المشترك (خلال شهر رجب وشعبان):</div>
-          <ol>${dutiesHtml}</ol>
+          <div style="font-size: 13px; font-weight: 600; line-height: 1.6; padding-right: 10px;">${dutiesHtml}</div>
           <div class="print-duties-note">
-            ${s.printNiya ? '<span class="red-text">نية القراءة :-</span> ' + s.printNiya.replace('نية القراءة :-', '').trim() + '<br>' : ''}
-            ${s.printNote ? '<span class="red-text">ملاحظة :-</span> ' + s.printNote.replace('ملاحظة :-', '').trim() : ''}
+            ${s.printNiya ? '<div style="margin-bottom:6px;"><span class="red-text">نية القراءة :-</span> ' + s.printNiya.replace('نية القراءة :-', '').trim() + '</div>' : ''}
+            ${s.printNote ? '<div><span class="red-text">ملاحظة :-</span> ' + s.printNote.replace('ملاحظة :-', '').trim() + '</div>' : ''}
           </div>
         </div>
         <div class="print-reward-box">
           <div class="print-duties-title red-text" style="text-decoration:none">الثواب الذي يحصل عليه المشترك (خلال شهر رجب وشعبان):</div>
-          <div class="qr-placeholder">
-            QR Code
-            <span>نزل التطبيق من هنا</span>
-          </div>
-          <ul>${rewardsHtml}</ul>
-          <div style="clear:both"></div>
+          <div style="font-size: 13px; font-weight: 600; line-height: 1.6; padding-right: 10px;">${rewardsHtml}</div>
         </div>
-        <div class="print-stats-box">
-          <div class="print-stats-title">${s.printFooter ? s.printFooter.split('\n').pop() : ''}</div>
-          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700">
-            <div>المبلغ المصروف الكلي: (127,500,92) ر.ع</div>
-            <div>عدد المستفيدين الكلي: (1,234) مستفيد</div>
+        <div class="print-stats-box" style="display:flex; align-items:center; justify-content:center; text-align:center; min-height: 40px;">
+          <div style="font-size: 14px; font-weight: 800; color: #8b0000;">
+            ${s.printFooter ? s.printFooter.replace(/\n/g, '<br>') : ''}
           </div>
-          <hr style="border:1px solid #8b0000; margin:5px 0">
-          <ul style="font-size:11px">
-            <li>صرف كفالة: (24,340,000 ر.ع) | عدد المستفيدين: (343)</li>
-            <li>صرف تغذية: (43,000,000 ر.ع) | عدد المستفيدين: (455)</li>
-            <li>صرف لحوم: (12,500,000 ر.ع) | عدد المستفيدين: (120)</li>
-            <li>صرف أيتام: (34,000,000 ر.ع) | عدد المستفيدين: (150)</li>
-            <li>صرف زواج: (5,000,000 ر.ع) | عدد المستفيدين: (10)</li>
-            <li>صرف إعمار: (8,660,000 ر.ع) | عدد المستفيدين: (20)</li>
-          </ul>
         </div>
       </div>
     </div>

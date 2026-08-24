@@ -240,10 +240,26 @@ function renderForms() {
     if (dist) {
       if (dist.status === 'distributed' && dist.participantId) {
         const p = ParticipantService.getById(dist.participantId);
-        assigneeHtml = '<span class="form-assignee">👤 ' + (p ? p.name : 'مشترك') + '</span>';
+        const phoneText = p && p.phone ? `<span class="assignee-phone">📞 ${p.phone}</span>` : '';
+        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} ر.ع</span>` : '';
+        assigneeHtml = `
+          <hr class="card-divider">
+          <div class="card-assignee-box">
+            <span class="assignee-name">👤 ${p ? p.name : 'مشترك'}</span>
+            ${phoneText}
+            ${amtText}
+          </div>
+        `;
       } else if (dist.status === 'reserved' && dist.representativeId) {
         const r = RepresentativeService.getById(dist.representativeId);
-        assigneeHtml = '<span class="form-assignee">🧑‍💼 ' + (r ? r.name : 'مندوب') + '</span>';
+        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} ر.ع</span>` : '';
+        assigneeHtml = `
+          <hr class="card-divider">
+          <div class="card-assignee-box">
+            <span class="assignee-name rep-color">🧑‍💼 ${r ? r.name : 'مندوب'}</span>
+            ${amtText}
+          </div>
+        `;
       }
     }
 
@@ -254,7 +270,7 @@ function renderForms() {
           <span class="form-status-badge status-${status}">${statusLabels[status] || status}</span>
         </div>
         <div class="form-pages">📖 ص ${f.startPage}${f.endPage !== f.startPage ? ' - ' + f.endPage : ''}</div>
-        <div class="form-verse">${f.startVerse || 'آيات الصفحة'}</div>
+        <div class="form-verse">« ${f.startVerse || 'آيات الصفحة'} »</div>
         ${assigneeHtml}
       </div>
     `;
