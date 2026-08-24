@@ -279,6 +279,14 @@ function printRepresentativeReceipt(repId, cycleId) {
     </div>
   `;
 
+  // طباعة الاستمارات الفعلية المحجوزة لكي يقوم المندوب بتوزيعها
+  var formsHtml = reserved.map(d => {
+    var form = getFormById(d.formId);
+    return form ? generateFormPrintHtml(form, 'مندوب: ' + rep.name) : '';
+  }).join('');
+
+  html += formsHtml;
+
   triggerPrint(html, 'إيصال المندوب: ' + rep.name);
 }
 
