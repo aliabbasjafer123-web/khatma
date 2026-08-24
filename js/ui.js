@@ -116,6 +116,7 @@ function generateFormPrintHtml(form, participantName = '.....................') 
     <div class="a4-page">
       <div class="print-border">
         <div class="print-header">
+          ${s.orgLogo ? `<img src="${s.orgLogo}" style="max-height:60px; margin-bottom:5px;">` : ''}
           <h3>${s.printTitle || ''}</h3>
           <p>${s.printSubtitle || ''}</p>
           <div style="font-weight:bold; color:#8b0000; font-size: 15px; margin-top: 4px;">الدورة: ${cycleName}</div>
@@ -153,14 +154,6 @@ function generateFormPrintHtml(form, participantName = '.....................') 
 }
 
 function triggerPrint(htmlContent, title = 'طباعة') {
-  var printArea = document.getElementById('directPrintArea');
-  if (!printArea) {
-    printArea = document.createElement('div');
-    printArea.id = 'directPrintArea';
-    document.body.appendChild(printArea);
-  }
-  printArea.innerHTML = htmlContent;
-
   var printModalTitle = document.getElementById('printModalTitle');
   var printContent = document.getElementById('printContent');
   if (printModalTitle) printModalTitle.textContent = title;
@@ -220,27 +213,73 @@ function printParticipantReceipt(participantId, cycleId) {
 function printRepresentativeReceipt(repId, cycleId) {
   var rep = RepresentativeService.getById(repId);
   var cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
-  if (!rep) {
-    Toast.error('المندوب غير موجود');
-    return;
-  }
-  if (!cycle) {
-    Toast.error('الرجاء اختيار دورة نشطة أولاً');
-    return;
-  }
+  if (!rep) return Toast.error('المندوب غير موجود');
+  if (!cycle) return Toast.error('الرجاء اختيار دورة نشطة أولاً');
 
   var reserved = RepresentativeService.getReservedForms(repId, cycle.id);
-  if (reserved.length === 0) {
-    Toast.warning('لا توجد استمارات محجوزة لهذا المندوب في هذه الدورة');
-    return;
+  var distributed = RepresentativeService.getDistributedForms(repId, cycle.id);
+  
+  if (reserved.length === 0 && distributed.length === 0) {
+    return Toast.warning('لا توجد استمارات لهذا المندوب في هذه الدورة');
   }
 
-  var pagesHtml = reserved.map(d => {
-    var form = getFormById(d.formId);
-    return form ? generateFormPrintHtml(form, 'مندوب: ' + rep.name) : '';
+  var s = SettingsService.getSettings();
+  
+  var allForms = [...reserved, ...distributed].sort((a,b) => parseInt(a.formId) - parseInt(b.formId));
+  var totalAmount = allForms.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+  
+  var formsListHtml = allForms.map(d => {
+    return `<div style="padding:4px; border:1px solid #ddd; text-align:center; border-radius:4px; background: ${d.status === 'distributed' ? '#f0fdf4' : '#fff'}">
+      استمارة <strong>${d.formId}</strong><br>
+      <small style="color:#666">${d.status === 'distributed' ? 'موزعة' : 'محجوزة'}</small>
+    </div>`;
   }).join('');
 
-  triggerPrint(pagesHtml, 'إيصال عهدة المندوب: ' + rep.name + ' (' + reserved.length + ' استمارة)');
+  var html = `
+    <div class="a4-page" style="padding: 15mm;">
+      <div style="border: 2px solid #8b0000; padding: 20px; border-radius: 8px; min-height: 250mm;">
+        <div style="text-align:center; border-bottom: 2px solid #8b0000; padding-bottom:15px; margin-bottom: 20px;">
+          ${s.orgLogo ? `<img src="${s.orgLogo}" style="max-height:80px; margin-bottom:10px;">` : ''}
+          <h2 style="color:#8b0000; margin:0;">إيصال استلام عهدة مندوب</h2>
+          <h4 style="margin:5px 0 0 0; color:#555;">دورة: ${cycle.name}</h4>
+        </div>
+        
+        <table style="width:100%; font-size:16px; margin-bottom:20px;">
+          <tr>
+            <td style="padding:8px;"><strong>اسم المندوب:</strong> ${rep.name}</td>
+            <td style="padding:8px;"><strong>المنطقة:</strong> ${rep.area || '-'}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;"><strong>رقم الهاتف:</strong> ${rep.phone || '-'}</td>
+            <td style="padding:8px;"><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}</td>
+          </tr>
+        </table>
+        
+        <div style="background:#fdf2f2; padding:15px; border-radius:6px; margin-bottom:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div><strong>إجمالي الاستمارات المستلمة:</strong> <span style="font-size:20px; color:#8b0000;">${allForms.length}</span></div>
+          <div><strong>إجمالي المبالغ المتوقعة:</strong> <span style="font-size:20px; color:green;">${totalAmount.toLocaleString()} د.ع</span></div>
+        </div>
+
+        <h4 style="color:#8b0000; margin-bottom: 10px;">أرقام الاستمارات التي بذمة المندوب:</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:10px; font-size:13px; max-height: 600px; overflow: hidden;">
+          ${formsListHtml}
+        </div>
+        
+        <div style="margin-top: 50px; display:flex; justify-content:space-between; text-align:center;">
+          <div style="width: 45%;">
+            <strong>توقيع المستلم (المندوب)</strong><br><br><br>
+            ....................................
+          </div>
+          <div style="width: 45%;">
+            <strong>توقيع إدارة المؤسسة</strong><br><br><br>
+            ....................................
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  triggerPrint(html, 'إيصال المندوب: ' + rep.name);
 }
 
 function populateParticipantSelects(searchQuery = '') {
@@ -321,4 +360,57 @@ function populateCycleSelects() {
       sel.appendChild(opt);
     });
   }
+}
+
+function copyCycleReport() {
+  var cycle = CycleService.getActive();
+  if (!cycle) { Toast.error('الرجاء اختيار دورة نشطة'); return; }
+  
+  var stats = CycleService.getStats(cycle.id);
+  var dists = DistributionService.getAll(cycle.id).filter(d => d.status === 'distributed');
+  var participants = ParticipantService.getAll();
+  
+  var pMap = {};
+  participants.forEach(p => pMap[p.id] = p.name);
+  
+  var text = '📊 ملخص دورة: ' + cycle.name + '\n';
+  text += '✅ إجمالي الاستمارات: ' + stats.total + '\n';
+  text += '✅ الموزعة للمشتركين: ' + stats.distributed + '\n';
+  text += '💰 إجمالي المبالغ: ' + Number(stats.totalAmount || 0).toLocaleString() + ' د.ع\n\n';
+  
+  if (dists.length === 0) {
+    text += 'لم يتم توزيع أي استمارة للمشتركين حتى الآن.';
+  } else {
+    text += '📋 تفاصيل التوزيع:\n';
+    dists.sort((a, b) => parseInt(a.formId) - parseInt(b.formId));
+    
+    dists.forEach(d => {
+      var name = pMap[d.participantId] || 'غير معروف';
+      var amt = d.paidAmount ? ' - ' + Number(d.paidAmount).toLocaleString() + ' د.ع' : '';
+      text += 'الاستمارة (' + d.formId + ') - ' + name + amt + '\n';
+    });
+  }
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      Toast.success('تم نسخ التقرير بنجاح!');
+    }).catch(() => fallbackCopyTextToClipboard(text));
+  } else {
+    fallbackCopyTextToClipboard(text);
+  }
+}
+
+function fallbackCopyTextToClipboard(text) {
+  var textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    Toast.success('تم نسخ التقرير بنجاح!');
+  } catch (err) {
+    Toast.error('حدث خطأ أثناء النسخ');
+  }
+  document.body.removeChild(textArea);
 }

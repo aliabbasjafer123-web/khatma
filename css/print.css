@@ -62,7 +62,7 @@
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
-    padding: 12mm;
+    padding: 6mm;
     page-break-after: always;
     box-sizing: border-box;
     position: relative;
@@ -75,12 +75,12 @@
 
   .print-border {
     border: 3px solid #8b0000;
-    padding: 8mm;
-    min-height: 270mm;
+    padding: 6mm;
+    min-height: 280mm;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
   }
 
   .print-header {

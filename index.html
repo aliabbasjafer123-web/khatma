@@ -83,8 +83,9 @@
     <main class="main-content" id="mainContent">
         <!-- Top Bar -->
         <header class="topbar">
-            <div class="topbar-right">
+            <div class="topbar-right" style="display:flex; align-items:center; gap: 10px;">
                 <button class="menu-toggle" id="menuToggle">☰</button>
+                <img id="topbarOrgLogo" src="" style="max-height: 40px; display: none; border-radius: 4px;">
                 <h1 class="page-title" id="pageTitle">لوحة التحكم</h1>
             </div>
             <div class="topbar-left">
@@ -430,7 +431,13 @@
                             <label>تذييل الإحصائيات (النهاية)</label>
                             <textarea id="settingPrintFooter" class="form-control" rows="3"></textarea>
                         </div>
-                        <button class="btn-primary" id="saveSettingsBtn">💾 حفظ وتطبيق إعدادات الطباعة</button>
+                        <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                            <label>شعار المؤسسة (اختياري)</label>
+                            <input type="file" id="settingOrgLogo" class="form-control" accept="image/*">
+                            <small style="color:var(--text-muted);display:block;margin-top:5px;">اختر صورة الشعار ليتم عرضها في أعلى البرنامج وفي صفحة الطباعة.</small>
+                            <img id="settingLogoPreview" src="" style="max-height: 80px; margin-top: 10px; display: none; border-radius: 4px; border: 1px solid #ccc;">
+                        </div>
+                        <button class="btn-primary" id="saveSettingsBtn" style="margin-top: 20px;">💾 حفظ وتطبيق إعدادات الطباعة</button>
                     </div>
                 </div>
             </section>

@@ -736,9 +736,10 @@ function renderReports() {
         </div>
         <div class="report-box full">
           <label>إجمالي المبالغ المحصلة</label>
-          <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} ر.ع</strong>
+          <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} د.ع</strong>
         </div>
       </div>
+      <button class="btn-primary" onclick="copyCycleReport()" style="margin-top:15px; width:100%; font-size:14px">📋 نسخ التقرير الكامل للتوزيعات</button>
     `;
   }
 
@@ -750,20 +751,24 @@ function renderReports() {
       repSummary.innerHTML = `
         <table class="data-table">
           <thead>
-            <tr><th>المندوب</th><th>المحجوز</th><th>الموزع</th><th>النسبة</th></tr>
+            <tr><th>المندوب</th><th>المحجوز</th><th>الموزع</th><th>النسبة</th><th>المبلغ المجموع</th></tr>
           </thead>
           <tbody>
             ${reps.map(r => {
-              const res = RepresentativeService.getReservedForms(r.id, currentCycle.id).length;
-              const dist = RepresentativeService.getDistributedForms(r.id, currentCycle.id).length;
+              const reserved = RepresentativeService.getReservedForms(r.id, currentCycle.id);
+              const distributed = RepresentativeService.getDistributedForms(r.id, currentCycle.id);
+              const res = reserved.length;
+              const dist = distributed.length;
               const total = res + dist;
               const pct = total > 0 ? Math.round((dist / total) * 100) : 0;
+              const amt = [...reserved, ...distributed].reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
               return `
                 <tr>
                   <td><strong>${r.name}</strong></td>
                   <td><span style="color:var(--warning);font-weight:700">${res}</span></td>
                   <td><span style="color:var(--success);font-weight:700">${dist}</span></td>
                   <td>${pct}%</td>
+                  <td><strong style="color:green">${amt.toLocaleString()} د.ع</strong></td>
                 </tr>
               `;
             }).join('')}
@@ -899,6 +904,19 @@ function renderSettings() {
   const tNote = document.getElementById('settingPrintNote'); if (tNote) tNote.value = s.printNote || '';
   const tRewards = document.getElementById('settingPrintRewards'); if (tRewards) tRewards.value = s.printRewards || '';
   const tFooter = document.getElementById('settingPrintFooter'); if (tFooter) tFooter.value = s.printFooter || '';
+  
+  if (s.orgLogo) {
+    const preview = document.getElementById('settingLogoPreview');
+    if (preview) {
+      preview.src = s.orgLogo;
+      preview.style.display = 'block';
+    }
+    const topbarLogo = document.getElementById('topbarOrgLogo');
+    if (topbarLogo) {
+      topbarLogo.src = s.orgLogo;
+      topbarLogo.style.display = 'block';
+    }
+  }
 }
 
 // =====================
@@ -1233,8 +1251,26 @@ function setupEventListeners() {
       printRewards: document.getElementById('settingPrintRewards').value.trim(),
       printFooter: document.getElementById('settingPrintFooter').value.trim()
     };
-    SettingsService.saveSettings(newSettings);
-    Toast.success('تم حفظ إعدادات نموذج الطباعة بنجاح!');
+    
+    var logoFile = document.getElementById('settingOrgLogo')?.files[0];
+    if (logoFile) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        newSettings.orgLogo = e.target.result;
+        SettingsService.saveSettings(newSettings);
+        document.getElementById('settingLogoPreview').src = e.target.result;
+        document.getElementById('settingLogoPreview').style.display = 'block';
+        if (document.getElementById('topbarOrgLogo')) {
+          document.getElementById('topbarOrgLogo').src = e.target.result;
+          document.getElementById('topbarOrgLogo').style.display = 'block';
+        }
+        Toast.success('تم حفظ إعدادات الطباعة والشعار بنجاح!');
+      };
+      reader.readAsDataURL(logoFile);
+    } else {
+      SettingsService.saveSettings(newSettings);
+      Toast.success('تم حفظ إعدادات نموذج الطباعة بنجاح!');
+    }
   });
 
   // مسح البيانات
