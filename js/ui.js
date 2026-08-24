@@ -106,8 +106,11 @@ updateClock();
 
 function generateFormPrintHtml(form, participantName = '.....................') {
   var s = SettingsService.getSettings();
-  var dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
-  var rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
+  var cycle = CycleService.getActive();
+  var cycleName = cycle ? cycle.name : '';
+  
+  var dutiesHtml = s.printDuties ? s.printDuties.split(/\n|\\n/).filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
+  var rewardsHtml = s.printRewards ? s.printRewards.split(/\n|\\n/).filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
 
   return `
     <div class="a4-page">
@@ -115,13 +118,14 @@ function generateFormPrintHtml(form, participantName = '.....................') 
         <div class="print-header">
           <h3>${s.printTitle || ''}</h3>
           <p>${s.printSubtitle || ''}</p>
+          <div style="font-weight:bold; color:#8b0000; font-size: 15px; margin-top: 4px;">الدورة: ${cycleName}</div>
         </div>
         <div class="print-info-row">
           <span>اسم المشترك: <strong>${participantName}</strong></span>
           <span>رقم الصفحة في التطبيق / <strong>${form.id}</strong></span>
         </div>
         <div class="print-hadith">
-          ${s.printHadith ? s.printHadith.split('\n').filter(Boolean).map(h => '<div style="margin-bottom:4px;">' + h + '</div>').join('') : ''}
+          ${s.printHadith ? s.printHadith.split(/\n|\\n/).filter(Boolean).map(h => '<div style="margin-bottom:4px;">' + h + '</div>').join('') : ''}
         </div>
         <div class="print-aya-box">
           تقرأ من صفحة ( <strong>${form.startPage}</strong> ) قال تعالى : (( <strong>${form.startVerse || ''}</strong> )) والصفحة ( <strong>${form.endPage}</strong> ) التي تنتهي بقوله تعالى (( <strong>${form.endVerse || ''}</strong> ))
