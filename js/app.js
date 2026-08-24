@@ -2,12 +2,12 @@
 // app.js - منطق التطبيق الرئيسي والأحداث
 // ======================================================
 
-let currentPage = 'dashboard';
-let currentCycle = null;
-let historyFilter = 'all';
-let formsFilter = 'all';
-let selectedFormsForDist = [];
-let selectedFormsForRep = [];
+var currentPage = 'dashboard';
+var currentCycle = null;
+var historyFilter = 'all';
+var formsFilter = 'all';
+var selectedFormsForDist = [];
+var selectedFormsForRep = [];
 
 // ---- بدء التطبيق ----
 function init() {

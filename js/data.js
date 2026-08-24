@@ -3,12 +3,10 @@
 // نظام إدارة الختمات القرآنية المتكامل
 // ======================================================
 
-const DB_KEY = 'khatma_db';
-const TOTAL_FORMS = 302;
+var DB_KEY = 'khatma_db';
+var INITIAL_CYCLE_ID = 'cycle_rajab_shaban_1447';
 
-const INITIAL_CYCLE_ID = 'cycle_rajab_shaban_1447';
-
-const DEFAULT_DB = {
+var DEFAULT_DB = {
   cycles: [
     {
       id: INITIAL_CYCLE_ID,
@@ -46,15 +44,14 @@ const DEFAULT_DB = {
 
 function loadDB() {
   try {
-    const raw = localStorage.getItem(DB_KEY);
+    var raw = localStorage.getItem(DB_KEY);
     if (!raw) {
-      const initial = JSON.parse(JSON.stringify(DEFAULT_DB));
+      var initial = JSON.parse(JSON.stringify(DEFAULT_DB));
       saveDB(initial);
       return initial;
     }
-    const db = JSON.parse(raw);
+    var db = JSON.parse(raw);
     
-    // إذا كانت قاعدة البيانات فارغة من الدورات ننشئ الدورة الافتراضية
     if (!db.cycles || db.cycles.length === 0) {
       db.cycles = JSON.parse(JSON.stringify(DEFAULT_DB.cycles));
       db.settings = { ...DEFAULT_DB.settings, ...(db.settings || {}), activeCycleId: INITIAL_CYCLE_ID };
@@ -90,13 +87,13 @@ function generateId() {
 }
 
 // ---- خدمة الدورات ----
-const CycleService = {
+var CycleService = {
   getAll() { return loadDB().cycles; },
   getById(id) { return loadDB().cycles.find(c => c.id === id); },
   getActive() {
-    const db = loadDB();
+    var db = loadDB();
     if (db.cycles.length === 0) return null;
-    let active = db.cycles.find(c => c.id === db.settings.activeCycleId);
+    var active = db.cycles.find(c => c.id === db.settings.activeCycleId);
     if (!active) {
       active = db.cycles[0];
       db.settings.activeCycleId = active.id;
@@ -105,8 +102,8 @@ const CycleService = {
     return active;
   },
   create(data) {
-    const db = loadDB();
-    const cycle = {
+    var db = loadDB();
+    var cycle = {
       id: generateId(),
       name: (data.name || '').trim(),
       cycleNumber: data.cycleNumber || '1',
@@ -123,15 +120,15 @@ const CycleService = {
     return cycle;
   },
   update(id, data) {
-    const db = loadDB();
-    const idx = db.cycles.findIndex(c => c.id === id);
+    var db = loadDB();
+    var idx = db.cycles.findIndex(c => c.id === id);
     if (idx === -1) return null;
     db.cycles[idx] = { ...db.cycles[idx], ...data, id };
     saveDB(db);
     return db.cycles[idx];
   },
   delete(id) {
-    const db = loadDB();
+    var db = loadDB();
     db.cycles = db.cycles.filter(c => c.id !== id);
     db.distributions = db.distributions.filter(d => d.cycleId !== id);
     if (db.settings.activeCycleId === id) {
@@ -141,17 +138,17 @@ const CycleService = {
     ActivityService.log('cycle_deleted', 'تم حذف الدورة');
   },
   setActive(id) {
-    const db = loadDB();
+    var db = loadDB();
     db.settings.activeCycleId = id;
     saveDB(db);
   },
   getStats(cycleId) {
-    const db = loadDB();
-    const dists = db.distributions.filter(d => d.cycleId === cycleId && d.status !== 'cancelled');
-    const distributed = dists.filter(d => d.status === 'distributed').length;
-    const reserved = dists.filter(d => d.status === 'reserved').length;
-    const totalAmount = dists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
-    const total = TOTAL_FORMS;
+    var db = loadDB();
+    var dists = db.distributions.filter(d => d.cycleId === cycleId && d.status !== 'cancelled');
+    var distributed = dists.filter(d => d.status === 'distributed').length;
+    var reserved = dists.filter(d => d.status === 'reserved').length;
+    var totalAmount = dists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+    var total = TOTAL_FORMS;
     return {
       total,
       distributed,
@@ -163,12 +160,12 @@ const CycleService = {
 };
 
 // ---- خدمة المشتركين ----
-const ParticipantService = {
+var ParticipantService = {
   getAll() { return loadDB().participants; },
   getById(id) { return loadDB().participants.find(p => p.id === id); },
   create(data) {
-    const db = loadDB();
-    const p = {
+    var db = loadDB();
+    var p = {
       id: generateId(),
       name: (data.name || '').trim(),
       phone: data.phone || '',
@@ -182,16 +179,16 @@ const ParticipantService = {
     return p;
   },
   update(id, data) {
-    const db = loadDB();
-    const idx = db.participants.findIndex(p => p.id === id);
+    var db = loadDB();
+    var idx = db.participants.findIndex(p => p.id === id);
     if (idx === -1) return null;
     db.participants[idx] = { ...db.participants[idx], ...data, id };
     saveDB(db);
     return db.participants[idx];
   },
   delete(id) {
-    const db = loadDB();
-    const p = db.participants.find(x => x.id === id);
+    var db = loadDB();
+    var p = db.participants.find(x => x.id === id);
     db.participants = db.participants.filter(x => x.id !== id);
     db.distributions.forEach(d => {
       if (d.participantId === id && d.status === 'distributed') {
@@ -202,7 +199,7 @@ const ParticipantService = {
     ActivityService.log('participant_deleted', 'تم حذف المشترك: ' + (p ? p.name : ''));
   },
   getForms(participantId, cycleId) {
-    const db = loadDB();
+    var db = loadDB();
     return db.distributions.filter(d =>
       d.participantId === participantId &&
       d.cycleId === cycleId &&
@@ -212,12 +209,12 @@ const ParticipantService = {
 };
 
 // ---- خدمة المندوبين ----
-const RepresentativeService = {
+var RepresentativeService = {
   getAll() { return loadDB().representatives; },
   getById(id) { return loadDB().representatives.find(r => r.id === id); },
   create(data) {
-    const db = loadDB();
-    const r = {
+    var db = loadDB();
+    var r = {
       id: generateId(),
       name: (data.name || '').trim(),
       phone: data.phone || '',
@@ -231,16 +228,16 @@ const RepresentativeService = {
     return r;
   },
   update(id, data) {
-    const db = loadDB();
-    const idx = db.representatives.findIndex(r => r.id === id);
+    var db = loadDB();
+    var idx = db.representatives.findIndex(r => r.id === id);
     if (idx === -1) return null;
     db.representatives[idx] = { ...db.representatives[idx], ...data, id };
     saveDB(db);
     return db.representatives[idx];
   },
   delete(id) {
-    const db = loadDB();
-    const r = db.representatives.find(x => x.id === id);
+    var db = loadDB();
+    var r = db.representatives.find(x => x.id === id);
     db.representatives = db.representatives.filter(x => x.id !== id);
     db.participants.forEach(p => {
       if (p.representativeId === id) p.representativeId = null;
@@ -254,7 +251,7 @@ const RepresentativeService = {
     ActivityService.log('rep_deleted', 'تم حذف المندوب: ' + (r ? r.name : ''));
   },
   getReservedForms(repId, cycleId) {
-    const db = loadDB();
+    var db = loadDB();
     return db.distributions.filter(d =>
       d.representativeId === repId &&
       d.cycleId === cycleId &&
@@ -262,7 +259,7 @@ const RepresentativeService = {
     );
   },
   getDistributedForms(repId, cycleId) {
-    const db = loadDB();
+    var db = loadDB();
     return db.distributions.filter(d =>
       d.representativeId === repId &&
       d.cycleId === cycleId &&
@@ -272,14 +269,14 @@ const RepresentativeService = {
 };
 
 // ---- خدمة التوزيع ----
-const DistributionService = {
+var DistributionService = {
   getAll(cycleId) {
-    const db = loadDB();
+    var db = loadDB();
     return db.distributions.filter(d => d.cycleId === cycleId);
   },
   getFormStatus(formId, cycleId) {
-    const db = loadDB();
-    const dist = db.distributions.find(d =>
+    var db = loadDB();
+    var dist = db.distributions.find(d =>
       d.formId === formId &&
       d.cycleId === cycleId &&
       d.status !== 'cancelled'
@@ -287,8 +284,8 @@ const DistributionService = {
     return dist || { status: 'available' };
   },
   getAvailableForms(cycleId) {
-    const db = loadDB();
-    const used = new Set(
+    var db = loadDB();
+    var used = new Set(
       db.distributions
         .filter(d => d.cycleId === cycleId && d.status !== 'cancelled')
         .map(d => d.formId)
@@ -296,23 +293,23 @@ const DistributionService = {
     return FORMS_DATA.filter(f => !used.has(f.id));
   },
   distributeToParticipant(cycleId, participantId, formIds, notes = '', amount = 0) {
-    const db = loadDB();
-    const participant = db.participants.find(p => p.id === participantId);
+    var db = loadDB();
+    var participant = db.participants.find(p => p.id === participantId);
     if (!participant) return { success: false, msg: 'المشترك غير موجود' };
 
-    const used = new Set(
+    var used = new Set(
       db.distributions
         .filter(d => d.cycleId === cycleId && d.status !== 'cancelled')
         .map(d => d.formId)
     );
-    const unavail = formIds.filter(id => used.has(id));
+    var unavail = formIds.filter(id => used.has(id));
     if (unavail.length > 0) {
       return { success: false, msg: 'الاستمارات التالية غير متاحة: ' + unavail.join(', ') };
     }
 
-    const totalAmt = parseFloat(amount) || 0;
-    const perForm = formIds.length > 0 ? (totalAmt / formIds.length) : 0;
-    const now = new Date().toISOString();
+    var totalAmt = parseFloat(amount) || 0;
+    var perForm = formIds.length > 0 ? (totalAmt / formIds.length) : 0;
+    var now = new Date().toISOString();
 
     formIds.forEach(formId => {
       db.distributions.push({
@@ -335,23 +332,23 @@ const DistributionService = {
     return { success: true, count: formIds.length };
   },
   reserveForRepresentative(cycleId, repId, formIds, notes = '', amount = 0) {
-    const db = loadDB();
-    const rep = db.representatives.find(r => r.id === repId);
+    var db = loadDB();
+    var rep = db.representatives.find(r => r.id === repId);
     if (!rep) return { success: false, msg: 'المندوب غير موجود' };
 
-    const used = new Set(
+    var used = new Set(
       db.distributions
         .filter(d => d.cycleId === cycleId && d.status !== 'cancelled')
         .map(d => d.formId)
     );
-    const unavail = formIds.filter(id => used.has(id));
+    var unavail = formIds.filter(id => used.has(id));
     if (unavail.length > 0) {
       return { success: false, msg: 'الاستمارات التالية غير متاحة: ' + unavail.join(', ') };
     }
 
-    const totalAmt = parseFloat(amount) || 0;
-    const perForm = formIds.length > 0 ? (totalAmt / formIds.length) : 0;
-    const now = new Date().toISOString();
+    var totalAmt = parseFloat(amount) || 0;
+    var perForm = formIds.length > 0 ? (totalAmt / formIds.length) : 0;
+    var now = new Date().toISOString();
 
     formIds.forEach(formId => {
       db.distributions.push({
@@ -374,8 +371,8 @@ const DistributionService = {
     return { success: true, count: formIds.length };
   },
   updateDistribution(distId, updates) {
-    const db = loadDB();
-    const idx = db.distributions.findIndex(d => d.id === distId);
+    var db = loadDB();
+    var idx = db.distributions.findIndex(d => d.id === distId);
     if (idx !== -1) {
       db.distributions[idx] = { ...db.distributions[idx], ...updates };
       saveDB(db);
@@ -385,8 +382,8 @@ const DistributionService = {
     return { success: false, msg: 'لم يتم العثور على التوزيع' };
   },
   cancel(distId) {
-    const db = loadDB();
-    const dist = db.distributions.find(d => d.id === distId);
+    var db = loadDB();
+    var dist = db.distributions.find(d => d.id === distId);
     if (!dist) return { success: false, msg: 'التوزيع غير موجود' };
     dist.status = 'cancelled';
     dist.cancelledAt = new Date().toISOString();
@@ -397,13 +394,13 @@ const DistributionService = {
 };
 
 // ---- خدمة النشاطات ----
-const ActivityService = {
+var ActivityService = {
   getAll(limit = 20) {
-    const db = loadDB();
+    var db = loadDB();
     return (db.activity || []).slice(-limit).reverse();
   },
   log(type, text) {
-    const db = loadDB();
+    var db = loadDB();
     db.activity.push({
       id: generateId(),
       type,
@@ -416,10 +413,10 @@ const ActivityService = {
 };
 
 // ---- خدمة الإعدادات ----
-const SettingsService = {
+var SettingsService = {
   getSettings() { return loadDB().settings; },
   saveSettings(newSettings) {
-    const db = loadDB();
+    var db = loadDB();
     db.settings = { ...db.settings, ...newSettings };
     saveDB(db);
     ActivityService.log('settings_updated', 'تم تحديث إعدادات نموذج الطباعة');
@@ -427,11 +424,11 @@ const SettingsService = {
 };
 
 // ---- خدمة النسخ الاحتياطي ----
-const BackupService = {
+var BackupService = {
   export() {
-    const db = loadDB();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(db, null, 2));
-    const a = document.createElement('a');
+    var db = loadDB();
+    var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(db, null, 2));
+    var a = document.createElement('a');
     a.setAttribute('href', dataStr);
     a.setAttribute('download', 'khatma_backup_' + new Date().toISOString().slice(0, 10) + '.json');
     document.body.appendChild(a);
@@ -440,10 +437,10 @@ const BackupService = {
     Toast.success('تم تصدير نسخة البيانات الاحتياطية بنجاح');
   },
   import(file, callback) {
-    const reader = new FileReader();
+    var reader = new FileReader();
     reader.onload = e => {
       try {
-        const db = JSON.parse(e.target.result);
+        var db = JSON.parse(e.target.result);
         if (db && typeof db === 'object') {
           saveDB(db);
           Toast.success('تم استيراد البيانات بنجاح!');

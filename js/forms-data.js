@@ -1,7 +1,7 @@
 ﻿// بيانات الـ 302 استمارة - مستخرجة من ملف Excel الرسمي
 // كل استمارة تحتوي على: الرقم، الصفحات، الآيات
 
-const FORMS_DATA = [
+var FORMS_DATA = [
   { id: 1, startPage: 1, endPage: 1, startVerse: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", endVerse: "وَلَا الضَّالِّينَ", description: "تقرأ من صفحة ( 1 ) قال تعالى :((الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ)) والصفحة (1 ) التي تنتهي بقوله تعالى ((وَلَا الضَّالِّينَ ))" },
   { id: 2, startPage: 2, endPage: 3, startVerse: "الم", endVerse: "وَمَا كَانُوا مُهْتَدِينَ", description: "تقرأ من صفحة (2) قال تعالى :((الم)) والصفحة (3) التي تنتهي بقوله تعالى ((وَمَا كَانُوا مُهْتَدِينَ ))" },
   { id: 3, startPage: 4, endPage: 5, startVerse: "مَثَلُهُمْ كَمَثَلِ", endVerse: "بِكُلِّ شَيْءٍ عَلِيمٌ", description: "تقرأ من صفحة ( 4) قال تعالى :((مَثَلُهُمْ كَمَثَلِ )) والصفحة ( 5) التي تنتهي بقوله تعالى ((بِكُلِّ شَيْءٍ عَلِيمٌ))" },
@@ -311,4 +311,4 @@ const FORMS_DATA = [
 function getFormById(id) { return FORMS_DATA.find(f => f.id === id); }
 
 // Helper: get forms count
-const TOTAL_FORMS = FORMS_DATA.length;
+var TOTAL_FORMS = FORMS_DATA.length;

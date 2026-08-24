@@ -2,13 +2,12 @@
 // ui.js - واجهات المستخدم والطباعة والمودالات
 // ======================================================
 
-// ---- نظام الإشعارات (Toast) ----
-const Toast = {
+var Toast = {
   show(msg, type = 'info', duration = 3500) {
-    const container = document.getElementById('toastContainer');
+    var container = document.getElementById('toastContainer');
     if (!container) return;
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-    const toast = document.createElement('div');
+    var icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    var toast = document.createElement('div');
     toast.className = 'toast ' + type;
     toast.innerHTML = '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span><span class="toast-msg">' + msg + '</span>';
     container.appendChild(toast);
@@ -23,17 +22,16 @@ const Toast = {
   info(msg) { this.show(msg, 'info'); }
 };
 
-// ---- المودالات (Modals) ----
-const Modal = {
+var Modal = {
   open(id) {
-    const el = document.getElementById(id);
+    var el = document.getElementById(id);
     if (el) {
       el.classList.remove('hidden');
       document.body.classList.add('modal-open');
     }
   },
   close(id) {
-    const el = document.getElementById(id);
+    var el = document.getElementById(id);
     if (el) {
       el.classList.add('hidden');
       if (document.querySelectorAll('.modal-overlay:not(.hidden)').length === 0) {
@@ -54,16 +52,16 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   if (e.target.classList.contains('modal-overlay')) Modal.closeAll();
   if (e.target.classList.contains('modal-close') || e.target.dataset.modal) {
-    const id = e.target.dataset.modal || e.target.closest('[data-modal]')?.dataset.modal;
+    var id = e.target.dataset.modal || e.target.closest('[data-modal]')?.dataset.modal;
     if (id) Modal.close(id);
   }
 });
 
 function showConfirm(title, message, onConfirm) {
-  const modal = document.getElementById('confirmModal');
+  var modal = document.getElementById('confirmModal');
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMessage').textContent = message;
-  const okBtn = document.getElementById('confirmOkBtn');
+  var okBtn = document.getElementById('confirmOkBtn');
   okBtn.onclick = () => {
     Modal.close('confirmModal');
     onConfirm();
@@ -73,23 +71,23 @@ function showConfirm(title, message, onConfirm) {
 
 function formatDate(iso) {
   if (!iso) return '-';
-  const d = new Date(iso);
+  var d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function formatDateTime(iso) {
   if (!iso) return '-';
-  const d = new Date(iso);
+  var d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 }
 
 function timeAgo(iso) {
   if (!iso) return '';
-  const now = new Date();
-  const d = new Date(iso);
-  const diff = Math.floor((now - d) / 1000);
+  var now = new Date();
+  var d = new Date(iso);
+  var diff = Math.floor((now - d) / 1000);
   if (diff < 60) return 'الآن';
   if (diff < 3600) return 'منذ ' + Math.floor(diff / 60) + ' دقيقة';
   if (diff < 86400) return 'منذ ' + Math.floor(diff / 3600) + ' ساعة';
@@ -97,20 +95,19 @@ function timeAgo(iso) {
 }
 
 function updateClock() {
-  const el = document.getElementById('datetime');
+  var el = document.getElementById('datetime');
   if (el) {
-    const now = new Date();
+    var now = new Date();
     el.textContent = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' | ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   }
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ---- إنشاء كود صفحة الطباعة A4 المعتمد ----
 function generateFormPrintHtml(form, participantName = '.....................') {
-  const s = SettingsService.getSettings();
-  const dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
-  const rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
+  var s = SettingsService.getSettings();
+  var dutiesHtml = s.printDuties ? s.printDuties.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
+  var rewardsHtml = s.printRewards ? s.printRewards.split('\n').filter(Boolean).map(l => '<li>' + l + '</li>').join('') : '';
 
   return `
     <div class="a4-page">
@@ -167,10 +164,8 @@ function generateFormPrintHtml(form, participantName = '.....................') 
   `;
 }
 
-// دالة تنفيذ الطباعة المباشرة
 function triggerPrint(htmlContent, title = 'طباعة') {
-  // تحديث الحاوية المخصصة للطباعة المباشرة
-  let printArea = document.getElementById('directPrintArea');
+  var printArea = document.getElementById('directPrintArea');
   if (!printArea) {
     printArea = document.createElement('div');
     printArea.id = 'directPrintArea';
@@ -178,9 +173,8 @@ function triggerPrint(htmlContent, title = 'طباعة') {
   }
   printArea.innerHTML = htmlContent;
 
-  // إعداد وعرض نافذة المعاينة
-  const printModalTitle = document.getElementById('printModalTitle');
-  const printContent = document.getElementById('printContent');
+  var printModalTitle = document.getElementById('printModalTitle');
+  var printContent = document.getElementById('printContent');
   if (printModalTitle) printModalTitle.textContent = title;
   if (printContent) printContent.innerHTML = htmlContent;
   
@@ -191,29 +185,27 @@ function doPrintNow() {
   window.print();
 }
 
-// ---- طباعة استمارة واحدة ----
 function printSingleFormA4(formId) {
-  const form = getFormById(formId);
+  var form = getFormById(formId);
   if (!form) return;
 
-  const cycle = CycleService.getActive();
-  let participantName = '.....................';
+  var cycle = CycleService.getActive();
+  var participantName = '.....................';
   if (cycle) {
-    const dist = DistributionService.getFormStatus(formId, cycle.id);
+    var dist = DistributionService.getFormStatus(formId, cycle.id);
     if (dist && dist.status === 'distributed' && dist.participantId) {
-      const p = ParticipantService.getById(dist.participantId);
+      var p = ParticipantService.getById(dist.participantId);
       if (p) participantName = p.name;
     }
   }
 
-  const contentHtml = generateFormPrintHtml(form, participantName);
+  var contentHtml = generateFormPrintHtml(form, participantName);
   triggerPrint(contentHtml, 'طباعة استمارة رقم ' + formId);
 }
 
-// ---- طباعة إيصالات المشترك ----
 function printParticipantReceipt(participantId, cycleId) {
-  const participant = ParticipantService.getById(participantId);
-  const cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
+  var participant = ParticipantService.getById(participantId);
+  var cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
   if (!participant) {
     Toast.error('المشترك غير موجود');
     return;
@@ -223,24 +215,23 @@ function printParticipantReceipt(participantId, cycleId) {
     return;
   }
 
-  const forms = ParticipantService.getForms(participantId, cycle.id);
+  var forms = ParticipantService.getForms(participantId, cycle.id);
   if (forms.length === 0) {
     Toast.warning('لا توجد استمارات موزعة لهذا المشترك في هذه الدورة');
     return;
   }
 
-  const pagesHtml = forms.map(d => {
-    const form = getFormById(d.formId);
+  var pagesHtml = forms.map(d => {
+    var form = getFormById(d.formId);
     return form ? generateFormPrintHtml(form, participant.name) : '';
   }).join('');
 
   triggerPrint(pagesHtml, 'إيصال المشترك: ' + participant.name + ' (' + forms.length + ' استمارة)');
 }
 
-// ---- طباعة استمارات المندوب ----
 function printRepresentativeReceipt(repId, cycleId) {
-  const rep = RepresentativeService.getById(repId);
-  const cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
+  var rep = RepresentativeService.getById(repId);
+  var cycle = cycleId ? CycleService.getById(cycleId) : CycleService.getActive();
   if (!rep) {
     Toast.error('المندوب غير موجود');
     return;
@@ -250,32 +241,31 @@ function printRepresentativeReceipt(repId, cycleId) {
     return;
   }
 
-  const reserved = RepresentativeService.getReservedForms(repId, cycle.id);
+  var reserved = RepresentativeService.getReservedForms(repId, cycle.id);
   if (reserved.length === 0) {
     Toast.warning('لا توجد استمارات محجوزة لهذا المندوب في هذه الدورة');
     return;
   }
 
-  const pagesHtml = reserved.map(d => {
-    const form = getFormById(d.formId);
+  var pagesHtml = reserved.map(d => {
+    var form = getFormById(d.formId);
     return form ? generateFormPrintHtml(form, 'مندوب: ' + rep.name) : '';
   }).join('');
 
   triggerPrint(pagesHtml, 'إيصال عهدة المندوب: ' + rep.name + ' (' + reserved.length + ' استمارة)');
 }
 
-// ---- تعبئة القوائم المنسدلة ----
 function populateParticipantSelects(searchQuery = '') {
-  const participants = ParticipantService.getAll();
-  const q = (searchQuery || '').toLowerCase().trim();
-  const filtered = q ? participants.filter(p => p.name.toLowerCase().includes(q) || (p.phone && p.phone.includes(q))) : participants;
+  var participants = ParticipantService.getAll();
+  var q = (searchQuery || '').toLowerCase().trim();
+  var filtered = q ? participants.filter(p => p.name.toLowerCase().includes(q) || (p.phone && p.phone.includes(q))) : participants;
 
-  const select = document.getElementById('distParticipantSelect');
+  var select = document.getElementById('distParticipantSelect');
   if (select) {
-    const curVal = select.value;
+    var curVal = select.value;
     select.innerHTML = '<option value="">-- اختر المشترك (' + filtered.length + ') --</option>';
     filtered.forEach(p => {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name + (p.phone ? ' (' + p.phone + ')' : '');
       select.appendChild(opt);
@@ -283,12 +273,12 @@ function populateParticipantSelects(searchQuery = '') {
     if (curVal && filtered.some(p => p.id === curVal)) select.value = curVal;
   }
 
-  const editSelect = document.getElementById('editParticipantSelect');
+  var editSelect = document.getElementById('editParticipantSelect');
   if (editSelect) {
-    const curVal = editSelect.value;
+    var curVal = editSelect.value;
     editSelect.innerHTML = '<option value="">-- اختر المشترك --</option>';
     participants.forEach(p => {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name + (p.phone ? ' (' + p.phone + ')' : '');
       editSelect.appendChild(opt);
@@ -298,16 +288,16 @@ function populateParticipantSelects(searchQuery = '') {
 }
 
 function populateRepSelects(searchQuery = '') {
-  const reps = RepresentativeService.getAll();
-  const q = (searchQuery || '').toLowerCase().trim();
-  const filtered = q ? reps.filter(r => r.name.toLowerCase().includes(q) || (r.area && r.area.toLowerCase().includes(q))) : reps;
+  var reps = RepresentativeService.getAll();
+  var q = (searchQuery || '').toLowerCase().trim();
+  var filtered = q ? reps.filter(r => r.name.toLowerCase().includes(q) || (r.area && r.area.toLowerCase().includes(q))) : reps;
 
-  const repSelect = document.getElementById('distRepSelect');
+  var repSelect = document.getElementById('distRepSelect');
   if (repSelect) {
-    const curVal = repSelect.value;
+    var curVal = repSelect.value;
     repSelect.innerHTML = '<option value="">-- اختر المندوب (' + filtered.length + ') --</option>';
     filtered.forEach(r => {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = r.id;
       opt.textContent = r.name + (r.area ? ' [' + r.area + ']' : '');
       repSelect.appendChild(opt);
@@ -315,12 +305,12 @@ function populateRepSelects(searchQuery = '') {
     if (curVal && filtered.some(r => r.id === curVal)) repSelect.value = curVal;
   }
 
-  const partRepSelect = document.getElementById('participantRep');
+  var partRepSelect = document.getElementById('participantRep');
   if (partRepSelect) {
-    const curVal = partRepSelect.value;
+    var curVal = partRepSelect.value;
     partRepSelect.innerHTML = '<option value="">-- مشترك مستقل --</option>';
     reps.forEach(r => {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = r.id;
       opt.textContent = r.name + (r.area ? ' [' + r.area + ']' : '');
       partRepSelect.appendChild(opt);
@@ -330,13 +320,13 @@ function populateRepSelects(searchQuery = '') {
 }
 
 function populateCycleSelects() {
-  const cycles = CycleService.getAll();
-  const active = CycleService.getActive();
-  const sel = document.getElementById('activeCycleSelect');
+  var cycles = CycleService.getAll();
+  var active = CycleService.getActive();
+  var sel = document.getElementById('activeCycleSelect');
   if (sel) {
     sel.innerHTML = '<option value="">-- اختر دورة --</option>';
     cycles.forEach(c => {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.name;
       if (active && c.id === active.id) opt.selected = true;
