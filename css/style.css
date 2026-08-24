@@ -1283,6 +1283,14 @@ body {
 @media (max-width: 860px) {
   .sidebar { transform: translateX(100%); }
   .sidebar.collapsed { transform: translateX(0); width: 260px; }
+  
+  .sidebar.collapsed .logo-text,
+  .sidebar.collapsed .cycle-selector,
+  .sidebar.collapsed .nav-label,
+  .sidebar.collapsed .sidebar-footer button span:last-child {
+    display: block !important;
+  }
+
   .main-content { margin-right: 0 !important; }
   .menu-toggle { display: block; }
 }
