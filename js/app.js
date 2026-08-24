@@ -957,6 +957,13 @@ function renderSettings() {
       topbarLogo.src = s.orgLogo;
       topbarLogo.style.display = 'block';
     }
+    const sidebarLogo = document.getElementById('sidebarOrgLogo');
+    const sidebarDefaultLogo = document.getElementById('sidebarDefaultLogo');
+    if (sidebarLogo && sidebarDefaultLogo) {
+      sidebarLogo.src = s.orgLogo;
+      sidebarLogo.style.display = 'block';
+      sidebarDefaultLogo.style.display = 'none';
+    }
   }
 }
 
@@ -1316,6 +1323,11 @@ function setupEventListeners() {
         if (document.getElementById('topbarOrgLogo')) {
           document.getElementById('topbarOrgLogo').src = e.target.result;
           document.getElementById('topbarOrgLogo').style.display = 'block';
+        }
+        if (document.getElementById('sidebarOrgLogo') && document.getElementById('sidebarDefaultLogo')) {
+          document.getElementById('sidebarOrgLogo').src = e.target.result;
+          document.getElementById('sidebarOrgLogo').style.display = 'block';
+          document.getElementById('sidebarDefaultLogo').style.display = 'none';
         }
         Toast.success('تم حفظ إعدادات الطباعة والشعار بنجاح!');
       };
