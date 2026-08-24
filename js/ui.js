@@ -303,14 +303,14 @@ function populateParticipantSelects(searchQuery = '') {
   var editSelect = document.getElementById('editParticipantSelect');
   if (editSelect) {
     var curVal = editSelect.value;
-    editSelect.innerHTML = '<option value="">-- اختر المشترك --</option>';
-    participants.forEach(p => {
+    editSelect.innerHTML = '<option value="">-- اختر المشترك (' + filtered.length + ') --</option>';
+    filtered.forEach(p => {
       var opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name + (p.phone ? ' (' + p.phone + ')' : '');
       editSelect.appendChild(opt);
     });
-    if (curVal) editSelect.value = curVal;
+    if (curVal && filtered.some(p => p.id === curVal)) editSelect.value = curVal;
   }
 }
 
@@ -413,4 +413,67 @@ function fallbackCopyTextToClipboard(text) {
     Toast.error('حدث خطأ أثناء النسخ');
   }
   document.body.removeChild(textArea);
+}
+
+function exportCycleReportExcel() {
+  var cycle = CycleService.getActive();
+  if (!cycle) { Toast.error('الرجاء اختيار دورة نشطة'); return; }
+  
+  var stats = CycleService.getStats(cycle.id);
+  var dists = DistributionService.getAll(cycle.id).filter(d => d.status === 'distributed');
+  var participants = ParticipantService.getAll();
+  
+  var pMap = {};
+  participants.forEach(p => pMap[p.id] = p.name);
+  
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  html += '<head><meta charset="utf-8"></head><body dir="rtl" style="font-family: Arial, sans-serif;">';
+  
+  html += '<h2 style="color: #8b0000; text-align: center;">تقرير التوزيع - دورة: ' + cycle.name + '</h2>';
+  html += '<table style="margin-bottom: 20px; font-size: 16px;">';
+  html += '<tr><td><strong>إجمالي الاستمارات:</strong></td><td>' + stats.total + '</td></tr>';
+  html += '<tr><td><strong>الموزعة للمشتركين:</strong></td><td>' + stats.distributed + '</td></tr>';
+  html += '<tr><td><strong>إجمالي المبالغ المحصلة:</strong></td><td style="color: green;">' + stats.totalAmount.toLocaleString() + ' د.ع</td></tr>';
+  html += '</table>';
+  
+  if (dists.length > 0) {
+    html += '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; text-align: center;">';
+    html += '<tr style="background-color: #fdf2f2; color: #8b0000;">';
+    html += '<th>رقم الاستمارة</th><th>اسم المشترك المستلم</th><th>المبلغ المدفوع (د.ع)</th><th>المندوب (إن وجد)</th><th>تاريخ الاستلام</th>';
+    html += '</tr>';
+    
+    dists.sort((a, b) => parseInt(a.formId) - parseInt(b.formId));
+    
+    dists.forEach(d => {
+      var pName = pMap[d.participantId] || 'غير معروف';
+      var rName = d.representativeId ? (RepresentativeService.getById(d.representativeId)?.name || '') : '';
+      var amt = d.paidAmount || 0;
+      var date = new Date(d.distributedAt || d.createdAt).toLocaleDateString('ar-EG');
+      
+      html += '<tr>';
+      html += '<td>' + d.formId + '</td>';
+      html += '<td>' + pName + '</td>';
+      html += '<td>' + amt + '</td>';
+      html += '<td>' + rName + '</td>';
+      html += '<td>' + date + '</td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+  } else {
+    html += '<p>لم يتم توزيع أي استمارة حتى الآن.</p>';
+  }
+  
+  html += '</body></html>';
+  
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'تقرير_التوزيع_' + cycle.name.replace(/ /g, '_') + '.xls';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  Toast.success('تم تصدير ملف الإكسل بنجاح!');
 }

@@ -672,11 +672,18 @@ function renderDistHistory() {
 
   tbody.innerHTML = dists.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(d => {
     const form = getFormById(d.formId);
-    const recipient = d.status === 'distributed' && d.participantId
-      ? '👤 ' + (ParticipantService.getById(d.participantId)?.name || 'غير معروف')
-      : d.representativeId
-        ? '🧑‍💼 ' + (RepresentativeService.getById(d.representativeId)?.name || 'غير معروف')
-        : '-';
+    let recipient = '-';
+    if (d.status === 'distributed' && d.participantId) {
+      const pName = ParticipantService.getById(d.participantId)?.name || 'غير معروف';
+      if (d.representativeId) {
+        const rName = RepresentativeService.getById(d.representativeId)?.name || 'غير معروف';
+        recipient = '👤 ' + pName + '<br><small style="color:var(--text-muted)">المندوب: ' + rName + '</small>';
+      } else {
+        recipient = '👤 ' + pName;
+      }
+    } else if (d.representativeId) {
+      recipient = '🧑‍💼 ' + (RepresentativeService.getById(d.representativeId)?.name || 'غير معروف');
+    }
 
     let actions = '';
     if (d.status !== 'cancelled') {
@@ -687,9 +694,9 @@ function renderDistHistory() {
       <tr>
         <td><strong style="color:var(--primary)">#${d.formId}</strong></td>
         <td style="font-size:12px">${form ? form.startPage + ' - ' + form.endPage : '-'}</td>
-        <td style="font-size:12px">${d.type === 'participant' ? 'مباشر لمشترك' : 'حجز عند مندوب'}</td>
+        <td style="font-size:12px">${d.participantId && d.representativeId ? 'موزعة عبر مندوب' : d.type === 'participant' ? 'مباشر لمشترك' : 'حجز عند مندوب'}</td>
         <td>${recipient}</td>
-        <td><strong style="color:var(--success)">${d.paidAmount ? Number(d.paidAmount).toLocaleString() + ' ر.ع' : '0 ر.ع'}</strong></td>
+        <td><strong style="color:var(--success)">${d.paidAmount ? Number(d.paidAmount).toLocaleString() + ' د.ع' : '0 د.ع'}</strong></td>
         <td style="font-size:12px;color:var(--text-muted)">${formatDate(d.createdAt)}</td>
         <td><span style="color:${statusColors[d.status]};font-weight:700;font-size:12px">${statusLabels[d.status]}</span></td>
         <td>${actions}</td>
@@ -739,7 +746,7 @@ function renderReports() {
           <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} د.ع</strong>
         </div>
       </div>
-      <button class="btn-primary" onclick="copyCycleReport()" style="margin-top:15px; width:100%; font-size:14px">📋 نسخ التقرير الكامل للتوزيعات</button>
+      <button class="btn-primary" onclick="exportCycleReportExcel()" style="margin-top:15px; width:100%; font-size:14px; background-color: #2e7d32; border-color: #2e7d32;">📥 تصدير التقرير الكامل كملف Excel</button>
     `;
   }
 
@@ -1057,6 +1064,10 @@ function setupEventListeners() {
 
   // -- البحث المباشر في قوائم التوزيع --
   document.getElementById('searchDistParticipant')?.addEventListener('input', e => {
+    populateParticipantSelects(e.target.value);
+  });
+  
+  document.getElementById('searchEditParticipant')?.addEventListener('input', e => {
     populateParticipantSelects(e.target.value);
   });
 
