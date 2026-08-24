@@ -1,10 +1,31 @@
 // ======================================================
-// data.js - إدارة البيانات وقاعدة البيانات المحلية (LocalStorage)
+// data.js - إدارة البيانات وقاعدة البيانات السحابية (Firebase)
 // نظام إدارة الختمات القرآنية المتكامل
 // ======================================================
 
 var DB_KEY = 'khatma_db';
 var INITIAL_CYCLE_ID = 'cycle_rajab_shaban_1447';
+
+// 1. إعداد Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyC2Yn2rC0tNI3DRKe7GjT9TFdLG09teWj8",
+  authDomain: "khatma-7a152.firebaseapp.com",
+  databaseURL: "https://khatma-7a152-default-rtdb.firebaseio.com",
+  projectId: "khatma-7a152",
+  storageBucket: "khatma-7a152.firebasestorage.app",
+  messagingSenderId: "898480390746",
+  appId: "1:898480390746:web:7072e13fbe3bc1f9968e63",
+  measurementId: "G-KSPCZ646ET"
+};
+
+// تهيئة Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+var MEMORY_DB = null;
+var isFirstLoad = true;
 
 var DEFAULT_DB = {
   cycles: [
@@ -43,31 +64,17 @@ var DEFAULT_DB = {
   }
 };
 
+// تحميل البيانات: نعيد النسخة الموجودة في الذاكرة (والتي تتزامن مع Firebase)
 function loadDB() {
+  if (MEMORY_DB) return MEMORY_DB;
+
   try {
     var raw = localStorage.getItem(DB_KEY);
     if (!raw) {
       var initial = JSON.parse(JSON.stringify(DEFAULT_DB));
-      saveDB(initial);
       return initial;
     }
     var db = JSON.parse(raw);
-    
-    // معالجة النصوص المشوهة أو القديمة وتحديث العملة إلى د.ع تلقائياً
-    if (db.settings && (
-      /[\u00C0-\u00FF]/.test(db.settings.printTitle || '') || 
-      (db.settings.printDuties && db.settings.printDuties.includes('ر.ع')) ||
-      (db.settings.printFooter && db.settings.printFooter.includes('ر.ع'))
-    )) {
-      db.settings = JSON.parse(JSON.stringify(DEFAULT_DB.settings));
-      saveDB(db);
-    }
-    
-    if (!db.cycles || db.cycles.length === 0) {
-      db.cycles = JSON.parse(JSON.stringify(DEFAULT_DB.cycles));
-      db.settings = { ...DEFAULT_DB.settings, ...(db.settings || {}), activeCycleId: INITIAL_CYCLE_ID };
-      saveDB(db);
-    }
     
     return {
       cycles: db.cycles || [],
@@ -83,15 +90,48 @@ function loadDB() {
   }
 }
 
+// حفظ البيانات: نحفظها محلياً ونرفعها فوراً للسحابة لتتزامن عند الأصدقاء!
 function saveDB(db) {
+  MEMORY_DB = db; // تحديث الذاكرة المحلية
+  
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(db));
-    return true;
   } catch (e) {
-    console.error('Error saving DB:', e);
-    return false;
+    console.error('Error saving local DB', e);
   }
+
+  // رفع البيانات لـ Firebase
+  database.ref('khatma_db').set(db);
+  return true;
 }
+
+// الاستماع المستمر لأي تغييرات تحدث في قاعدة البيانات من أجهزة أخرى
+database.ref('khatma_db').on('value', snapshot => {
+  if (snapshot.exists()) {
+    MEMORY_DB = snapshot.val();
+    
+    // حفظ نسخة احتياطية في جهاز المستخدم
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(MEMORY_DB));
+    } catch (e) {}
+
+    // تحديث واجهة المستخدم فوراً لتعكس البيانات الجديدة
+    if (typeof renderForms === 'function') {
+      renderForms();
+      renderParticipants();
+      renderRepresentatives();
+      renderDistHistory();
+      renderReports();
+      populateParticipantSelects();
+      populateRepresentativeSelects();
+    }
+  } else {
+    // إذا كانت قاعدة البيانات السحابية فارغة، ارفع بيانات هذا الجهاز لتكون البداية
+    var localDb = loadDB();
+    database.ref('khatma_db').set(localDb);
+  }
+  isFirstLoad = false;
+});
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
