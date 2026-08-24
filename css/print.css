@@ -59,8 +59,8 @@
   }
 
   .a4-page {
-    width: 210mm;
-    min-height: 297mm;
+    max-width: 210mm;
+    width: 100%;
     margin: 0 auto;
     padding: 6mm;
     page-break-after: always;
@@ -76,7 +76,6 @@
   .print-border {
     border: 3px solid #8b0000;
     padding: 6mm;
-    min-height: 280mm;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -208,7 +207,7 @@
     padding: 8px 12px;
     border-radius: 6px;
     background: #fff8f8;
-    margin-top: auto;
+    margin-top: 10px;
   }
 
   .print-stats-title {
