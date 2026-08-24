@@ -459,7 +459,7 @@ function getFilteredReportData() {
   };
 }
 
-function exportCycleReportExcel() {
+window.exportCycleReportExcel = function() {
   var data = getFilteredReportData();
   if (!data) return;
   
@@ -523,7 +523,7 @@ function exportCycleReportExcel() {
   Toast.success('تم تصدير ملف الإكسل بنجاح!');
 }
 
-function sendWhatsAppReport() {
+window.sendWhatsAppReport = function() {
   var data = getFilteredReportData();
   if (!data) return;
 

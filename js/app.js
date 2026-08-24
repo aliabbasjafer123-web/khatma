@@ -46,6 +46,11 @@ function navigateTo(page) {
     item.classList.toggle('active', item.dataset.page === page);
   });
 
+  // إغلاق القائمة الجانبية في الهاتف المحمول بعد اختيار صفحة
+  if (window.innerWidth <= 860) {
+    document.getElementById('sidebar')?.classList.remove('collapsed');
+  }
+
   currentPage = page;
 
   const titles = {

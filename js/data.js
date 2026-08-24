@@ -123,7 +123,7 @@ database.ref('khatma_db').on('value', snapshot => {
       renderDistHistory();
       renderReports();
       populateParticipantSelects();
-      populateRepresentativeSelects();
+      populateRepSelects();
     }
   } else {
     // إذا كانت قاعدة البيانات السحابية فارغة، ارفع بيانات هذا الجهاز لتكون البداية
