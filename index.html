@@ -353,6 +353,14 @@
 
             <!-- REPORTS PAGE -->
             <section class="page hidden" id="page-reports">
+                <div class="page-toolbar" style="display:flex; gap:10px; align-items:center; background:#fff; padding:15px; border-radius:8px; margin-bottom:20px; box-shadow:var(--shadow-sm); flex-wrap:wrap;">
+                    <div style="font-weight:bold; color:var(--primary);">تحديد فترة التقرير:</div>
+                    <input type="date" id="reportStartDate" class="form-control" style="width:140px;">
+                    <span style="font-weight:bold; color:#555">إلى</span>
+                    <input type="date" id="reportEndDate" class="form-control" style="width:140px;">
+                    <button class="btn-primary" id="applyReportFilterBtn">🔄 تحديث</button>
+                    <button class="btn-secondary" id="clearReportFilterBtn">✕ مسح</button>
+                </div>
                 <div class="reports-grid">
                     <div class="report-card">
                         <h3>📊 حصيلة وإحصائيات الدورة الحالية</h3>

@@ -627,62 +627,48 @@ body {
 /* ---- Forms Grid (302 cards) ---- */
 .forms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 15px;
 }
 
 .form-card {
   background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 14px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
   overflow: hidden;
 }
 
 .form-card::before {
-  content: '☪';
+  content: '';
   position: absolute;
-  left: -12px;
-  bottom: -15px;
-  font-size: 70px;
-  color: rgba(0, 0, 0, 0.02);
-  font-family: serif;
-  transform: rotate(-15deg);
-  pointer-events: none;
+  top: 0; left: 0; right: 0;
+  height: 3px;
   transition: all 0.3s ease;
 }
 
-.form-card:hover::before {
-  color: rgba(30, 58, 138, 0.04);
-  transform: rotate(0deg) scale(1.1);
-}
-
 .form-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 24px rgba(30, 58, 138, 0.08);
-  border-color: rgba(30, 58, 138, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(30, 58, 138, 0.08);
+  border-color: rgba(30, 58, 138, 0.15);
 }
 
-/* Status specific card designs with gradients */
-.form-card.status-available {
-  border-top: 4px solid var(--success);
-  background: linear-gradient(to bottom, #f0fdf4 0%, #ffffff 80px);
-}
-.form-card.status-distributed {
-  border-top: 4px solid #3b82f6;
-  background: linear-gradient(to bottom, #eff6ff 0%, #ffffff 80px);
-}
-.form-card.status-reserved {
-  border-top: 4px solid var(--warning);
-  background: linear-gradient(to bottom, #fffbeb 0%, #ffffff 80px);
-}
+/* Status specific card designs */
+.form-card.status-available::before { background: var(--success); }
+.form-card.status-available { background: linear-gradient(to bottom, #f0fdf440 0%, #ffffff 60px); }
+
+.form-card.status-distributed::before { background: #3b82f6; }
+.form-card.status-distributed { background: linear-gradient(to bottom, #eff6ff40 0%, #ffffff 60px); }
+
+.form-card.status-reserved::before { background: var(--warning); }
+.form-card.status-reserved { background: linear-gradient(to bottom, #fffbeb40 0%, #ffffff 60px); }
 
 .form-card-header {
   display: flex;
@@ -691,45 +677,51 @@ body {
 }
 
 .form-num {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--primary);
   letter-spacing: -0.5px;
 }
 
 .form-status-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.status-available { background: var(--success-light); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.25); }
-.status-distributed { background: #dbeafe; color: #1e40af; border: 1px solid rgba(59, 130, 246, 0.25); }
-.status-reserved { background: var(--warning-light); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.25); }
+.status-available { background: #d1fae5; color: #065f46; border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-distributed { background: #dbeafe; color: #1e40af; border: 1px solid rgba(59, 130, 246, 0.2); }
+.status-reserved { background: #fef3c7; color: #92400e; border: 1px solid rgba(245, 158, 11, 0.2); }
 
 .form-pages {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  text-align: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 4px;
+  border-radius: 6px;
 }
 
 .form-verse {
   font-family: 'Noto Naskh Arabic', serif;
-  font-size: 13.5px;
-  color: #1e293b;
+  font-size: 11px;
+  color: #475569;
   background: rgba(0, 0, 0, 0.02);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  border-radius: 6px;
   border-right: 3px solid rgba(0, 0, 0, 0.1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   direction: rtl;
+  text-align: center;
 }
 
 .form-card.status-available .form-verse { border-right-color: var(--success); }
@@ -738,16 +730,16 @@ body {
 
 .card-divider {
   border: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
   margin: 2px 0;
 }
 
 .card-assignee-box {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
   background: rgba(0, 0, 0, 0.02);
 }
 
@@ -755,12 +747,13 @@ body {
 .form-card.status-reserved .card-assignee-box { background: rgba(245, 158, 11, 0.04); }
 
 .assignee-name {
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #1e40af;
   display: flex;
   align-items: center;
   gap: 4px;
+  justify-content: center;
 }
 
 .assignee-name.rep-color {
@@ -768,15 +761,16 @@ body {
 }
 
 .assignee-phone {
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .assignee-amount {
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--success);
-  margin-top: 2px;
+  text-align: center;
 }
 
 /* ---- Tables ---- */

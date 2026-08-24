@@ -241,7 +241,7 @@ function renderForms() {
       if (dist.status === 'distributed' && dist.participantId) {
         const p = ParticipantService.getById(dist.participantId);
         const phoneText = p && p.phone ? `<span class="assignee-phone">📞 ${p.phone}</span>` : '';
-        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} ر.ع</span>` : '';
+        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} د.ع</span>` : '';
         assigneeHtml = `
           <hr class="card-divider">
           <div class="card-assignee-box">
@@ -252,7 +252,7 @@ function renderForms() {
         `;
       } else if (dist.status === 'reserved' && dist.representativeId) {
         const r = RepresentativeService.getById(dist.representativeId);
-        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} ر.ع</span>` : '';
+        const amtText = dist.paidAmount ? `<span class="assignee-amount">💰 ${Number(dist.paidAmount).toLocaleString()} د.ع</span>` : '';
         assigneeHtml = `
           <hr class="card-divider">
           <div class="card-assignee-box">
@@ -720,7 +720,38 @@ function renderReports() {
     return;
   }
 
-  const stats = CycleService.getStats(currentCycle.id);
+  const startDateInput = document.getElementById('reportStartDate')?.value;
+  const endDateInput = document.getElementById('reportEndDate')?.value;
+  
+  let allDists = DistributionService.getAll(currentCycle.id).filter(d => d.status !== 'cancelled');
+  
+  if (startDateInput || endDateInput) {
+    allDists = allDists.filter(d => {
+      const dDate = new Date(d.distributedAt || d.createdAt);
+      let inRange = true;
+      if (startDateInput) {
+        const s = new Date(startDateInput); s.setHours(0,0,0,0);
+        if (dDate < s) inRange = false;
+      }
+      if (endDateInput) {
+        const e = new Date(endDateInput); e.setHours(23,59,59,999);
+        if (dDate > e) inRange = false;
+      }
+      return inRange;
+    });
+  }
+
+  const distributedForms = allDists.filter(d => d.status === 'distributed');
+  const reservedForms = allDists.filter(d => d.status === 'reserved');
+  const totalAmt = allDists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+  
+  const stats = {
+    total: 302, // TOTAL_FORMS is 302
+    distributed: distributedForms.length,
+    reserved: reservedForms.length,
+    available: Math.max(0, 302 - distributedForms.length - reservedForms.length),
+    totalAmount: totalAmt
+  };
 
   if (cycleSummary) {
     cycleSummary.innerHTML = `
@@ -746,7 +777,10 @@ function renderReports() {
           <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} د.ع</strong>
         </div>
       </div>
-      <button class="btn-primary" onclick="exportCycleReportExcel()" style="margin-top:15px; width:100%; font-size:14px; background-color: #2e7d32; border-color: #2e7d32;">📥 تصدير التقرير الكامل كملف Excel</button>
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="btn-primary" onclick="exportCycleReportExcel()" style="flex:1; font-size:14px; background-color: #2e7d32; border-color: #2e7d32;">📥 تصدير Excel</button>
+        <button class="btn-primary" onclick="sendWhatsAppReport()" style="flex:1; font-size:14px; background-color: #25D366; border-color: #25D366; color: #fff;">💬 إرسال واتساب</button>
+      </div>
     `;
   }
 
@@ -762,13 +796,13 @@ function renderReports() {
           </thead>
           <tbody>
             ${reps.map(r => {
-              const reserved = RepresentativeService.getReservedForms(r.id, currentCycle.id);
-              const distributed = RepresentativeService.getDistributedForms(r.id, currentCycle.id);
-              const res = reserved.length;
-              const dist = distributed.length;
+              const rReserved = reservedForms.filter(d => d.representativeId === r.id);
+              const rDistributed = distributedForms.filter(d => d.representativeId === r.id);
+              const res = rReserved.length;
+              const dist = rDistributed.length;
               const total = res + dist;
               const pct = total > 0 ? Math.round((dist / total) * 100) : 0;
-              const amt = [...reserved, ...distributed].reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+              const amt = [...rReserved, ...rDistributed].reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
               return `
                 <tr>
                   <td><strong>${r.name}</strong></td>
@@ -1234,6 +1268,14 @@ function setupEventListeners() {
   document.getElementById('formsSearch')?.addEventListener('input', () => renderForms());
   document.getElementById('participantsSearch')?.addEventListener('input', () => renderParticipants());
   document.getElementById('repsSearch')?.addEventListener('input', () => renderRepresentatives());
+
+  // فلاتر التقارير
+  document.getElementById('applyReportFilterBtn')?.addEventListener('click', () => renderReports());
+  document.getElementById('clearReportFilterBtn')?.addEventListener('click', () => {
+    document.getElementById('reportStartDate').value = '';
+    document.getElementById('reportEndDate').value = '';
+    renderReports();
+  });
 
   // إعدادات النسخ الاحتياطي
   document.getElementById('exportBtn')?.addEventListener('click', () => BackupService.export());

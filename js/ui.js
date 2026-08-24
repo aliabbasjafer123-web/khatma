@@ -423,36 +423,73 @@ function fallbackCopyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
-function exportCycleReportExcel() {
+function getFilteredReportData() {
   var cycle = CycleService.getActive();
-  if (!cycle) { Toast.error('الرجاء اختيار دورة نشطة'); return; }
+  if (!cycle) { Toast.error('الرجاء اختيار دورة نشطة'); return null; }
   
-  var stats = CycleService.getStats(cycle.id);
-  var dists = DistributionService.getAll(cycle.id).filter(d => d.status === 'distributed');
+  var startDateInput = document.getElementById('reportStartDate')?.value;
+  var endDateInput = document.getElementById('reportEndDate')?.value;
+  
+  var allDists = DistributionService.getAll(cycle.id).filter(d => d.status !== 'cancelled');
+  
+  if (startDateInput || endDateInput) {
+    allDists = allDists.filter(d => {
+      const dDate = new Date(d.distributedAt || d.createdAt);
+      let inRange = true;
+      if (startDateInput) {
+        const s = new Date(startDateInput); s.setHours(0,0,0,0);
+        if (dDate < s) inRange = false;
+      }
+      if (endDateInput) {
+        const e = new Date(endDateInput); e.setHours(23,59,59,999);
+        if (dDate > e) inRange = false;
+      }
+      return inRange;
+    });
+  }
+
+  var distributedForms = allDists.filter(d => d.status === 'distributed');
+  
+  return {
+    cycle: cycle,
+    dists: distributedForms,
+    totalAmount: allDists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0),
+    startDate: startDateInput,
+    endDate: endDateInput
+  };
+}
+
+function exportCycleReportExcel() {
+  var data = getFilteredReportData();
+  if (!data) return;
+  
   var participants = ParticipantService.getAll();
-  
   var pMap = {};
   participants.forEach(p => pMap[p.id] = p.name);
   
   var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
   html += '<head><meta charset="utf-8"></head><body dir="rtl" style="font-family: Arial, sans-serif;">';
   
-  html += '<h2 style="color: #8b0000; text-align: center;">تقرير التوزيع - دورة: ' + cycle.name + '</h2>';
+  var dateStr = '';
+  if (data.startDate || data.endDate) {
+    dateStr = ' (الفترة: ' + (data.startDate || 'البداية') + ' إلى ' + (data.endDate || 'النهاية') + ')';
+  }
+  
+  html += '<h2 style="color: #8b0000; text-align: center;">تقرير التوزيع - دورة: ' + data.cycle.name + dateStr + '</h2>';
   html += '<table style="margin-bottom: 20px; font-size: 16px;">';
-  html += '<tr><td><strong>إجمالي الاستمارات:</strong></td><td>' + stats.total + '</td></tr>';
-  html += '<tr><td><strong>الموزعة للمشتركين:</strong></td><td>' + stats.distributed + '</td></tr>';
-  html += '<tr><td><strong>إجمالي المبالغ المحصلة:</strong></td><td style="color: green;">' + stats.totalAmount.toLocaleString() + ' د.ع</td></tr>';
+  html += '<tr><td><strong>الموزعة للمشتركين:</strong></td><td>' + data.dists.length + '</td></tr>';
+  html += '<tr><td><strong>إجمالي المبالغ المحصلة:</strong></td><td style="color: green;">' + data.totalAmount.toLocaleString() + ' د.ع</td></tr>';
   html += '</table>';
   
-  if (dists.length > 0) {
+  if (data.dists.length > 0) {
     html += '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; text-align: center;">';
     html += '<tr style="background-color: #fdf2f2; color: #8b0000;">';
     html += '<th>رقم الاستمارة</th><th>اسم المشترك المستلم</th><th>المبلغ المدفوع (د.ع)</th><th>المندوب (إن وجد)</th><th>تاريخ الاستلام</th>';
     html += '</tr>';
     
-    dists.sort((a, b) => parseInt(a.formId) - parseInt(b.formId));
+    data.dists.sort((a, b) => parseInt(a.formId) - parseInt(b.formId));
     
-    dists.forEach(d => {
+    data.dists.forEach(d => {
       var pName = pMap[d.participantId] || 'غير معروف';
       var rName = d.representativeId ? (RepresentativeService.getById(d.representativeId)?.name || '') : '';
       var amt = d.paidAmount || 0;
@@ -468,7 +505,7 @@ function exportCycleReportExcel() {
     });
     html += '</table>';
   } else {
-    html += '<p>لم يتم توزيع أي استمارة حتى الآن.</p>';
+    html += '<p>لم يتم توزيع أي استمارة في هذه الفترة.</p>';
   }
   
   html += '</body></html>';
@@ -477,11 +514,47 @@ function exportCycleReportExcel() {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'تقرير_التوزيع_' + cycle.name.replace(/ /g, '_') + '.xls';
+  a.download = 'تقرير_التوزيع_' + data.cycle.name.replace(/ /g, '_') + '.xls';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   
   Toast.success('تم تصدير ملف الإكسل بنجاح!');
+}
+
+function sendWhatsAppReport() {
+  var data = getFilteredReportData();
+  if (!data) return;
+
+  var participants = ParticipantService.getAll();
+  var pMap = {};
+  participants.forEach(p => pMap[p.id] = p.name);
+
+  var dateStr = '';
+  if (data.startDate || data.endDate) {
+    dateStr = '\n📅 الفترة: ' + (data.startDate || 'البداية') + ' إلى ' + (data.endDate || 'النهاية');
+  }
+
+  var text = '📊 *تقرير التوزيع - نظام إدارة الختمات*\n';
+  text += '📌 الدورة: ' + data.cycle.name + dateStr + '\n\n';
+  text += '🔹 إجمالي الاستمارات الموزعة: ' + data.dists.length + '\n';
+  text += '💰 إجمالي المبالغ المحصلة: ' + data.totalAmount.toLocaleString() + ' د.ع\n';
+  text += '------------------------\n';
+  
+  if (data.dists.length === 0) {
+    text += 'لم يتم توزيع أي استمارة في هذه الفترة.';
+  } else {
+    text += '📋 تفاصيل التوزيع:\n';
+    data.dists.sort((a, b) => parseInt(a.formId) - parseInt(b.formId));
+    data.dists.forEach(d => {
+      var name = pMap[d.participantId] || 'غير معروف';
+      var amt = d.paidAmount ? ' (' + Number(d.paidAmount).toLocaleString() + ' د.ع)' : '';
+      text += 'الاستمارة [' + d.formId + '] - ' + name + amt + '\n';
+    });
+  }
+
+  var encodedText = encodeURIComponent(text);
+  var waUrl = 'https://wa.me/9647842277961?text=' + encodedText;
+  window.open(waUrl, '_blank');
 }
