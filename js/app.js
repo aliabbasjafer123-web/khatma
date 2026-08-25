@@ -1798,3 +1798,4 @@ function renderPublicForm(formId) {
     </a>
   `;
 }
+document.addEventListener('DOMContentLoaded', () => setTimeout(checkAccessControl, 1000));
