@@ -270,7 +270,7 @@ function renderForms() {
     }
 
     return `
-      <div class="form-card status-${status}" onclick="showFormDetails(${f.id})">
+      <div class="form-card status-${status}" onclick="showFormDetails(${f.id})" title="${f.description || ''}">
         <div class="form-card-header">
           <span class="form-num">#${f.id}</span>
           <span class="form-status-badge status-${status}">${statusLabels[status] || status}</span>
@@ -350,34 +350,29 @@ function showFormDetails(formId) {
 
   document.getElementById('formDetailsTitle').textContent = 'استمارة رقم ' + formId;
   document.getElementById('formDetailsContent').innerHTML = `
-    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:20px;">
-      
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom: 2px solid #f0f0f0; padding-bottom:15px;">
-        <div style="font-size:22px; font-weight:900; color:var(--primary)">\u{1F4D6} الاستمارة رقم <span style="color:#8b0000;">${formId}</span></div>
+    <div class="form-details-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+        <div style="font-size:28px; font-weight:900; color:var(--primary)">استمارة #${formId}</div>
         <div>${statusHtml}</div>
       </div>
-      
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
-        <div style="background:#f8f9fa; padding:15px; border-radius:8px; text-align:center; border:1px solid #e9ecef;">
-          <div style="color:#6c757d; font-size:13px; font-weight:bold; margin-bottom:5px;">من صفحة</div>
-          <div style="font-size:24px; font-weight:900; color:var(--primary);">${form.startPage}</div>
+      <div class="receipt-info-grid">
+        <div class="receipt-info-item">
+          <label>من صفحة</label>
+          <span>${form.startPage}</span>
         </div>
-        <div style="background:#f8f9fa; padding:15px; border-radius:8px; text-align:center; border:1px solid #e9ecef;">
-          <div style="color:#6c757d; font-size:13px; font-weight:bold; margin-bottom:5px;">إلى صفحة</div>
-          <div style="font-size:24px; font-weight:900; color:var(--primary);">${form.endPage}</div>
+        <div class="receipt-info-item">
+          <label>إلى صفحة</label>
+          <span>${form.endPage}</span>
         </div>
       </div>
-      
-      <div style="background:#f0fdf4; padding:20px; border-radius:10px; border-right:4px solid #22c55e; text-align:right;">
-        <div style="color:#166534; font-size:14px; font-weight:bold; margin-bottom:10px;">\u{1F4DC} تفاصيل القراءة:</div>
-        <div style="color:#15803d; font-size:16px; line-height:1.8; font-weight:600;">${form.description || 'لا يوجد تفاصيل إضافية'}</div>
+      <div class="verse-box">
+        <p>${form.description || ''}</p>
       </div>
-      
-      <div style="display:flex; gap:10px; justify-content:center; margin-top:20px; padding-top:15px; border-top: 1px dashed #e9ecef;">
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
         ${actionHtml}
       </div>
     </div>
-`;
+  `;
 
   saveFormEditBtn.onclick = () => {
     const distId = editDistId.value;
@@ -386,7 +381,7 @@ function showFormDetails(formId) {
     const paidAmount = parseFloat(editPaidAmount.value) || 0;
 
     if (!newParticipantId) {
-      Toast.error('��لرجاء اختيار المشترك لحفظ التوزيع');
+      Toast.error('الرجاء اختيار المشترك لحفظ التوزيع');
       return;
     }
 
@@ -1604,8 +1599,8 @@ function renderPublicForm(formId) {
     printNote: ''
   };
   
-  const dutiesHtml = s.printDuties ? s.printDuties.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
-  const rewardsHtml = s.printRewards ? s.printRewards.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  const dutiesHtml = s.printDuties ? s.printDuties.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
   
   const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
   const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
@@ -1753,3 +1748,388 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+function renderPublicForm(formId) {
+  const form = typeof getFormById === 'function' ? getFormById(parseInt(formId)) : null;
+  const content = document.getElementById('publicViewContent');
+  
+  if (!form) {
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    return;
+  }
+  
+  // Try to get settings
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const s = (db && db.settings) ? db.settings : {
+    printDuties: '',
+    printRewards: '',
+    printNiya: '',
+    printNote: ''
+  };
+  
+  const dutiesHtml = s.printDuties ? s.printDuties.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  
+  const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
+  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  
+  content.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
+        <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
+        ${dutiesHtml}
+      </div>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border-right: 4px solid #8b0000;">
+        <h4 style="color:#8b0000; margin-top:0; font-weight:800;">الثواب والمكافأة:</h4>
+        ${rewardsHtml}
+      </div>
+      
+      ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
+      ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+    </div>
+    
+    <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
+      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+    </a>
+  `;
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(checkAccessControl, 1000));
+\n// =====================
+// نظام الصلاحيات والقفل (Security & Access Control)
+// =====================
+window.checkAccessControl = function() {
+  // If public viewer is active, don't show login
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('viewForm')) {
+    document.getElementById('loginOverlay')?.classList.add('hidden');
+    return;
+  }
+
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  if (!db || !db.settings) return;
+  
+  const adminPin = db.settings.adminPin || '1234';
+  const userPin = db.settings.userPin || '0000';
+  const overlay = document.getElementById('loginOverlay');
+  if (!overlay) return;
+  
+  // If no PINs are set, access is fully open
+  if (!adminPin && !userPin) {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  }
+  
+  // Check session
+  const currentRole = sessionStorage.getItem('khatma_role');
+  if (currentRole === 'admin') {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  } else if (currentRole === 'user') {
+    overlay.classList.add('hidden');
+    document.body.classList.add('restricted-mode');
+    enforceRestrictedMode();
+    return;
+  }
+  
+  // Not logged in -> Show overlay
+  overlay.classList.remove('hidden');
+  
+  // Setup login button
+  document.getElementById('loginBtn').onclick = function() {
+    const pin = document.getElementById('loginPin').value.trim();
+    if (adminPin && pin === adminPin) {
+      sessionStorage.setItem('khatma_role', 'admin');
+      overlay.classList.add('hidden');
+      document.body.classList.remove('restricted-mode');
+      Toast.success('تم تسجيل الدخول بنجاح كمسؤول');
+    } else if (userPin && pin === userPin) {
+      sessionStorage.setItem('khatma_role', 'user');
+      overlay.classList.add('hidden');
+      document.body.classList.add('restricted-mode');
+      enforceRestrictedMode();
+      Toast.success('تم تسجيل الدخول بنجاح كمدخل بيانات');
+      
+      // If they were on a restricted page, kick them to dashboard
+      const currentPage = document.querySelector('.nav-item.active')?.getAttribute('data-page');
+      if (['finance', 'reports', 'settings'].includes(currentPage)) {
+        navigateTo('dashboard');
+      }
+    } else {
+      Toast.error('رمز الدخول غير صحيح');
+      document.getElementById('loginPin').value = '';
+    }
+  };
+};
+
+function enforceRestrictedMode() {
+  // Add CSS to hide restricted items
+  if (!document.getElementById('restrictedStyles')) {
+    const style = document.createElement('style');
+    style.id = 'restrictedStyles';
+    style.innerHTML = `
+      body.restricted-mode [data-page="finance"],
+      body.restricted-mode [data-page="reports"],
+      body.restricted-mode [data-page="settings"],
+      body.restricted-mode .btn-danger,
+      body.restricted-mode .danger,
+      body.restricted-mode .delete {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Intercept init
+const oldInit = window.init;
+if (oldInit && !window.initIntercepted) {
+  window.init = function() {
+    oldInit();
+    setTimeout(checkAccessControl, 500); // Give DB time to load
+  };
+  window.initIntercepted = true;
+}
+\ndocument.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const viewFormId = params.get('viewForm');
+  
+  if (viewFormId) {
+    // Show the public viewer container immediately to hide everything else
+    const container = document.getElementById('publicViewContainer');
+    if (container) {
+      container.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling main body
+    }
+    
+    // We need to wait for Settings to load to display duties/rewards correctly
+    // But FORMS_DB is available immediately.
+    setTimeout(() => {
+      renderPublicForm(viewFormId);
+    }, 1500); // Give Firebase 1.5s to load settings, then render
+  }
+});
+
+function renderPublicForm(formId) {
+  const form = typeof getFormById === 'function' ? getFormById(formId) : null;
+  const content = document.getElementById('publicViewContent');
+  
+  if (!form) {
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    return;
+  }
+  
+  // Try to get settings
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const s = (db && db.settings) ? db.settings : {
+    printDuties: '',
+    printRewards: '',
+    printNiya: '',
+    printNote: ''
+  };
+  
+  const dutiesHtml = s.printDuties ? s.printDuties.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(//).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  
+  const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
+  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  
+  content.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
+        <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
+        ${dutiesHtml}
+      </div>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border-right: 4px solid #8b0000;">
+        <h4 style="color:#8b0000; margin-top:0; font-weight:800;">الثواب والمكافأة:</h4>
+        ${rewardsHtml}
+      </div>
+      
+      ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
+      ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+    </div>
+    
+    <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
+      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+    </a>
+  `;
+}
+\n// =====================
+// نظام الصلاحيات والقفل (Security & Access Control)
+// =====================
+window.checkAccessControl = function() {
+  // If public viewer is active, don't show login
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('viewForm')) {
+    document.getElementById('loginOverlay')?.classList.add('hidden');
+    return;
+  }
+
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  if (!db || !db.settings) return;
+  
+  const adminPin = db.settings.adminPin || '1234';
+  const userPin = db.settings.userPin || '0000';
+  const overlay = document.getElementById('loginOverlay');
+  if (!overlay) return;
+  
+  // If no PINs are set, access is fully open
+  if (!adminPin && !userPin) {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  }
+  
+  // Check session
+  const currentRole = sessionStorage.getItem('khatma_role');
+  if (currentRole === 'admin') {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  } else if (currentRole === 'user') {
+    overlay.classList.add('hidden');
+    document.body.classList.add('restricted-mode');
+    enforceRestrictedMode();
+    return;
+  }
+  
+  // Not logged in -> Show overlay
+  overlay.classList.remove('hidden');
+  
+  // Setup login button
+  document.getElementById('loginBtn').onclick = function() {
+    const pin = document.getElementById('loginPin').value.trim();
+    if (adminPin && pin === adminPin) {
+      sessionStorage.setItem('khatma_role', 'admin');
+      overlay.classList.add('hidden');
+      document.body.classList.remove('restricted-mode');
+      Toast.success('تم تسجيل الدخول بنجاح كمسؤول');
+    } else if (userPin && pin === userPin) {
+      sessionStorage.setItem('khatma_role', 'user');
+      overlay.classList.add('hidden');
+      document.body.classList.add('restricted-mode');
+      enforceRestrictedMode();
+      Toast.success('تم تسجيل الدخول بنجاح كمدخل بيانات');
+      
+      // If they were on a restricted page, kick them to dashboard
+      const currentPage = document.querySelector('.nav-item.active')?.getAttribute('data-page');
+      if (['finance', 'reports', 'settings'].includes(currentPage)) {
+        navigateTo('dashboard');
+      }
+    } else {
+      Toast.error('رمز الدخول غير صحيح');
+      document.getElementById('loginPin').value = '';
+    }
+  };
+};
+
+function enforceRestrictedMode() {
+  // Add CSS to hide restricted items
+  if (!document.getElementById('restrictedStyles')) {
+    const style = document.createElement('style');
+    style.id = 'restrictedStyles';
+    style.innerHTML = `
+      body.restricted-mode [data-page="finance"],
+      body.restricted-mode [data-page="reports"],
+      body.restricted-mode [data-page="settings"],
+      body.restricted-mode .btn-danger,
+      body.restricted-mode .danger,
+      body.restricted-mode .delete {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Intercept init
+const oldInit = window.init;
+if (oldInit && !window.initIntercepted) {
+  window.init = function() {
+    oldInit();
+    setTimeout(checkAccessControl, 500); // Give DB time to load
+  };
+  window.initIntercepted = true;
+}
+\ndocument.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const viewFormId = params.get('viewForm');
+  
+  if (viewFormId) {
+    // Show the public viewer container immediately to hide everything else
+    const container = document.getElementById('publicViewContainer');
+    if (container) {
+      container.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling main body
+    }
+    
+    // We need to wait for Settings to load to display duties/rewards correctly
+    // But FORMS_DB is available immediately.
+    setTimeout(() => {
+      renderPublicForm(viewFormId);
+    }, 1500); // Give Firebase 1.5s to load settings, then render
+  }
+});
+
+function renderPublicForm(formId) {
+  const form = typeof getFormById === 'function' ? getFormById(formId) : null;
+  const content = document.getElementById('publicViewContent');
+  
+  if (!form) {
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    return;
+  }
+  
+  // Try to get settings
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const s = (db && db.settings) ? db.settings : {
+    printDuties: '',
+    printRewards: '',
+    printNiya: '',
+    printNote: ''
+  };
+  
+  const dutiesHtml = s.printDuties ? s.printDuties.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  
+  const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
+  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  
+  content.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
+        <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
+        ${dutiesHtml}
+      </div>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border-right: 4px solid #8b0000;">
+        <h4 style="color:#8b0000; margin-top:0; font-weight:800;">الثواب والمكافأة:</h4>
+        ${rewardsHtml}
+      </div>
+      
+      ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
+      ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+    </div>
+    
+    <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
+      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+    </a>
+  `;
+}
