@@ -1592,19 +1592,51 @@ window.showParticipantProfile = function(id) {
   
   const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
   
-  let totalPaid = 0;
-  let formsCount = 0;
-  let cyclesMap = {};
+  // الاستمارات الموزعة لهذا المشترك (status === 'distributed')
+  const myDists = (db.distributions || []).filter(d =>
+    d.participantId === id && d.status === 'distributed'
+  );
   
-  db.distributions.forEach(d => {
-    if (d.type === 'direct' && d.participantId === id) {
-      formsCount += d.forms.length;
-      totalPaid += (d.amount || 0);
-      cyclesMap[d.cycleId] = true;
-    }
-  });
+  const formsCount = myDists.length;
+  const totalPaid = myDists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
   
-  const cycleCount = Object.keys(cyclesMap).length;
+  // عدد الدورات المشارك بها
+  const cyclesSet = new Set(myDists.map(d => d.cycleId).filter(Boolean));
+  const cycleCount = cyclesSet.size;
+  
+  // جدول الاستمارات مع تفاصيل الدورة
+  const allCycles = (db.cycles || []);
+  
+  let tableRows = '';
+  if (myDists.length > 0) {
+    // ترتيب حسب الدورة
+    const grouped = {};
+    myDists.forEach(d => {
+      if (!grouped[d.cycleId]) grouped[d.cycleId] = [];
+      grouped[d.cycleId].push(d);
+    });
+    
+    Object.keys(grouped).forEach(cycleId => {
+      const cycle = allCycles.find(c => c.id === cycleId);
+      const cycleName = cycle ? cycle.name : 'دورة غير محددة';
+      const cycleDists = grouped[cycleId];
+      const cycleTotal = cycleDists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+      const formNums = cycleDists.map(d => d.formId).join('، ');
+      
+      tableRows += `
+        <tr style="background:#f8f9fa;">
+          <td colspan="3" style="font-weight:800; color:var(--primary); padding:8px 12px;">${cycleName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 12px;">الاستمارات: ${formNums}</td>
+          <td style="padding:6px 12px; text-align:center; font-weight:700;">${cycleDists.length}</td>
+          <td style="padding:6px 12px; text-align:center; color:var(--success); font-weight:700;">${Number(cycleTotal).toLocaleString()} د.ع</td>
+        </tr>
+      `;
+    });
+  } else {
+    tableRows = '<tr><td colspan="3" style="text-align:center; color:#999; padding:16px;">لا توجد استمارات موزعة لهذا المشترك</td></tr>';
+  }
   const repName = p.representativeId ? (RepresentativeService.getById(p.representativeId)?.name || 'غير معروف') : 'مستقل';
   
   const html = `
@@ -1627,8 +1659,23 @@ window.showParticipantProfile = function(id) {
       </div>
       <div class="dash-stat-row" style="flex-direction:column; text-align:center; padding:10px;">
         <span style="font-size:12px">إجمالي التبرعات (د.ع)</span>
-        <span class="dash-stat-val" style="font-size:20px; color:var(--success)">${totalPaid}</span>
+        <span class="dash-stat-val" style="font-size:20px; color:var(--success)">${Number(totalPaid).toLocaleString()}</span>
       </div>
+    </div>
+    
+    <div style="margin-bottom:16px; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px; border:1px solid #eee; border-radius:8px; overflow:hidden;">
+        <thead>
+          <tr style="background:var(--primary); color:#fff;">
+            <th style="padding:8px 12px; text-align:right;">الدورة / الاستمارات</th>
+            <th style="padding:8px 12px; text-align:center;">العدد</th>
+            <th style="padding:8px 12px; text-align:center;">المبلغ المدفوع</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
     </div>
     
     <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:13px;">
