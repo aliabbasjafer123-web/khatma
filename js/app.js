@@ -1678,13 +1678,6 @@ window.showParticipantProfile = function(id) {
       </table>
     </div>
     
-    <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:13px;">
-      <strong>ملاحظات:</strong> <br> ${p.notes || 'لا توجد ملاحظات مسجلة.'}
-    </div>
-  `;
-  
-  document.getElementById('profileContent').innerHTML = html;
-  Modal.open('participantProfileModal');
 };
 document.addEventListener('DOMContentLoaded', function() {
   const params = new URLSearchParams(window.location.search);
@@ -1711,24 +1704,19 @@ function renderPublicForm(formId) {
   const content = document.getElementById('publicViewContent');
   
   if (!form) {
-    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">الاستمارة المطلوبة غير موجودة!</div>';
     return;
   }
   
-  // Try to get settings
   const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
-  const s = (db && db.settings) ? db.settings : {
-    printDuties: '',
-    printRewards: '',
-    printNiya: '',
-    printNote: ''
-  };
+  const s = (db && db.settings) ? db.settings : {};
   
-  const dutiesHtml = s.printDuties ? s.printDuties.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
-  const rewardsHtml = s.printRewards ? s.printRewards.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  const dutiesHtml = s.printDuties ? s.printDuties.split(/\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔️</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(/\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
   
   const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
-  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  const adminPhone = s.adminPhone || '07842277961';
+  const waLink = 'https://wa.me/964' + adminPhone.replace(/^0+/, '') + '?text=' + waMsg;
   
   content.innerHTML = `
     <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
@@ -1736,6 +1724,26 @@ function renderPublicForm(formId) {
         <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
         <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
       </div>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div style="background:#f0fdf4; padding:16px; border-radius:10px; text-align:center; border:2px solid #22c55e;">
+          <div style="font-size:12px; color:#166534; font-weight:700; margin-bottom:4px;">من صفحة</div>
+          <div style="font-size:36px; font-weight:900; color:#15803d;">${form.startPage}</div>
+        </div>
+        <div style="background:#eff6ff; padding:16px; border-radius:10px; text-align:center; border:2px solid #3b82f6;">
+          <div style="font-size:12px; color:#1d4ed8; font-weight:700; margin-bottom:4px;">إلى صفحة</div>
+          <div style="font-size:36px; font-weight:900; color:#1d4ed8;">${form.endPage}</div>
+        </div>
+      </div>
+      
+      ${form.description ? `
+      <div style="background:#fefce8; border-right:4px solid #ca8a04; border-radius:10px; padding:18px; margin-bottom:20px;">
+        <div style="font-size:13px; color:#854d0e; font-weight:700; margin-bottom:10px;">📜 الآيات والتفاصيل:</div>
+        <div style="font-size:20px; line-height:2.4; font-weight:700; color:#713f12; font-family:'Noto Naskh Arabic', serif; text-align:right; direction:rtl;">
+          ${form.description}
+        </div>
+      </div>
+      ` : ''}
       
       <div style="margin-bottom: 20px;">
         <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
@@ -1749,10 +1757,14 @@ function renderPublicForm(formId) {
       
       ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
       ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+      
+      <div style="margin-top:20px; text-align:center; padding:10px; background:#f8f9fa; border-radius:8px; font-weight:bold;">
+        📞 رقم الهاتف للاستفسار: <span style="color:#1d4ed8; font-size:18px;" dir="ltr">${adminPhone}</span>
+      </div>
     </div>
     
     <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
-      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+      💬 إبلاغ الإدارة بإتمام الختمة عبر واتساب
     </a>
   `;
 }
