@@ -674,6 +674,18 @@
             <div class="modal-body" id="formEditSection" style="border-top: 1px solid var(--border); padding-top: 16px; background: #fafafa;">
                 <h3 style="font-size: 15px; margin-bottom: 12px; font-weight:800" id="formEditSectionTitle">تعديل التوزيع</h3>
                 <input type="hidden" id="editDistId">
+
+                <!-- عرض اسم المندوب الثابت (للاستمارات المحجوزة والموزعة) -->
+                <div id="editFixedRepLabel" style="display:none; background:#e8f4fd; border-right:4px solid #0ea5e9; padding:10px 14px; border-radius:8px; font-weight:700; color:#0369a1; margin-bottom:14px; font-size:14px;"></div>
+
+                <!-- اختيار مندوب عند التوزيع المباشر (للاستمارات المتاحة) -->
+                <div class="form-group" id="editDirectRepGroup" style="display:none;">
+                    <label>👤 ربط بمندوب (اختياري)</label>
+                    <select id="editDirectRepSelect" class="form-control">
+                        <option value="">-- بدون مندوب --</option>
+                    </select>
+                </div>
+
                 <div class="form-group" id="editParticipantGroup">
                     <label>المشترك المستلم (ابحث واختر)</label>
                     <input type="text" id="searchEditParticipant" class="form-control" placeholder="🔍 ابحث عن مشترك..." style="margin-bottom: 8px;">

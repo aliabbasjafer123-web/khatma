@@ -377,7 +377,22 @@ function populateRepSelects(searchQuery = '') {
     });
     if (curVal) partRepSelect.value = curVal;
   }
+
+  // Also populate the editDirectRepSelect in the form details modal
+  var editDirectRepSelect = document.getElementById('editDirectRepSelect');
+  if (editDirectRepSelect) {
+    var curVal2 = editDirectRepSelect.value;
+    editDirectRepSelect.innerHTML = '<option value="">-- بدون مندوب --</option>';
+    reps.forEach(r => {
+      var opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.name + (r.area ? ' [' + r.area + ']' : '');
+      editDirectRepSelect.appendChild(opt);
+    });
+    if (curVal2) editDirectRepSelect.value = curVal2;
+  }
 }
+
 
 function populateCycleSelects() {
   var cycles = CycleService.getAll();

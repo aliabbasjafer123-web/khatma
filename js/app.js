@@ -306,6 +306,7 @@ function showFormDetails(formId) {
     const dist = DistributionService.getFormStatus(formId, cycleId);
     if (dist && dist.status === 'distributed') {
       const p = dist.participantId ? ParticipantService.getById(dist.participantId) : null;
+      const r2 = dist.representativeId ? RepresentativeService.getById(dist.representativeId) : null;
       statusHtml = '<span class="form-status-badge status-distributed">موزعة للمشترك: ' + (p ? p.name : '؟') + '</span>';
       actionHtml = '<button class="btn-danger" onclick="cancelDist(\'' + dist.id + '\')">إلغاء التوزيع</button>';
 
@@ -315,6 +316,13 @@ function showFormDetails(formId) {
       editParticipantSelect.value = dist.participantId || '';
       editPhone.value = p ? (p.phone || '') : '';
       editPaidAmount.value = dist.paidAmount || '';
+      const repSelectorEl3 = document.getElementById('editDirectRepGroup');
+      if (repSelectorEl3) repSelectorEl3.style.display = 'none';
+      const repLabelEl3 = document.getElementById('editFixedRepLabel');
+      if (repLabelEl3) {
+        if (r2) { repLabelEl3.style.display = ''; repLabelEl3.textContent = '👤 المندوب المسؤول: ' + r2.name; }
+        else { repLabelEl3.style.display = 'none'; }
+      }
 
     } else if (dist && dist.status === 'reserved') {
       const r = dist.representativeId ? RepresentativeService.getById(dist.representativeId) : null;
@@ -327,6 +335,14 @@ function showFormDetails(formId) {
       editParticipantSelect.value = '';
       editPhone.value = '';
       editPaidAmount.value = dist.paidAmount || '';
+      // Show fixed rep label (rep is locked)
+      const repSelectorEl2 = document.getElementById('editDirectRepGroup');
+      if (repSelectorEl2) repSelectorEl2.style.display = 'none';
+      const repLabelEl2 = document.getElementById('editFixedRepLabel');
+      if (repLabelEl2) {
+        repLabelEl2.style.display = '';
+        repLabelEl2.textContent = '👤 المندوب المسؤول: ' + (r ? r.name : '—');
+      }
 
     } else {
       // الاستمارة متاحة - إظهار قسم التوزيع المباشر السريع
@@ -336,6 +352,15 @@ function showFormDetails(formId) {
       editParticipantSelect.value = '';
       editPhone.value = '';
       editPaidAmount.value = '';
+      // Show rep selector for direct distribution
+      const repSelectorEl = document.getElementById('editDirectRepGroup');
+      if (repSelectorEl) {
+        populateRepSelects();
+        document.getElementById('editDirectRepSelect').value = '';
+        repSelectorEl.style.display = '';
+      }
+      const repLabelEl = document.getElementById('editFixedRepLabel');
+      if (repLabelEl) repLabelEl.style.display = 'none';
       actionHtml = '<span class="success-text">✅ جاهزة للتوزيع الفوري أدناه</span>';
     }
   } else {
@@ -399,6 +424,20 @@ function showFormDetails(formId) {
     if (distId.startsWith('NEW_')) {
       const res = DistributionService.distributeToParticipant(cycleId, newParticipantId, [formId], '', paidAmount);
       if (res.success) {
+        // If rep was selected, also update the distribution's representativeId
+        const directRepId = document.getElementById('editDirectRepSelect')?.value;
+        if (directRepId && res.distributionId) {
+          DistributionService.updateDistribution(res.distributionId, { representativeId: directRepId });
+        } else if (directRepId) {
+          // find the newly created dist and update it
+          const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+          const newDist = db.distributions.find(d => d.cycleId === cycleId && d.participantId === newParticipantId && Array.isArray(d.formIds) ? d.formIds.includes(parseInt(formId)) : d.formId == formId);
+          if (newDist) DistributionService.updateDistribution(newDist.id, { representativeId: directRepId });
+        }
+        // send WhatsApp if paid amount exists
+        if (paidAmount > 0) {
+          sendParticipantWa(newParticipantId, paidAmount);
+        }
         Toast.success('تم توزيع الاستمارة بنجاح!');
         Modal.close('formDetailsModal');
         updateCycleUI();
@@ -419,6 +458,10 @@ function showFormDetails(formId) {
 
     const res = DistributionService.updateDistribution(distId, updates);
     if (res.success) {
+      // send WhatsApp notification with paid amount
+      if (paidAmount > 0) {
+        sendParticipantWa(newParticipantId, paidAmount);
+      }
       Toast.success('تم حفظ التعديلات بنجاح');
       Modal.close('formDetailsModal');
       updateCycleUI();
