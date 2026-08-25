@@ -395,7 +395,7 @@ function showFormDetails(formId) {
       if (p) ParticipantService.update(newParticipantId, { phone: newPhone });
     }
 
-    // إذا كانت استمارة جديدة غير موزعة نقوم بتوزيعها فوراً
+    // إذا كانت استمارة ��ديدة غير موزعة نقوم بتوزيعها فوراً
     if (distId.startsWith('NEW_')) {
       const res = DistributionService.distributeToParticipant(cycleId, newParticipantId, [formId], '', paidAmount);
       if (res.success) {
@@ -1648,10 +1648,10 @@ window.checkAccessControl = function() {
   }
 
   const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
-  if (!db || !db.settings) return;
+  const s = (db && db.settings) ? db.settings : {};
   
-  const adminPin = db.settings.adminPin || '1234';
-  const userPin = db.settings.userPin || '0000';
+  const adminPin = s.adminPin || '1234';
+  const userPin = s.userPin || '0000';
   const overlay = document.getElementById('loginOverlay');
   if (!overlay) return;
   
