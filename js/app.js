@@ -100,7 +100,7 @@ function renderDashboard() {
     document.getElementById('ds-cycle-name').textContent = '-';
     document.getElementById('ds-cycle-start').textContent = '-';
     document.getElementById('ds-cycle-end').textContent = '-';
-    if (amountEl) amountEl.textContent = '0 ر.ع';
+    if (amountEl) amountEl.textContent = '0 د.ع';
     renderActivity();
     return;
   }
@@ -134,7 +134,7 @@ function renderDashboard() {
   document.getElementById('ds-cycle-name').textContent = currentCycle.name;
   document.getElementById('ds-cycle-start').textContent = formatDate(currentCycle.startDate);
   document.getElementById('ds-cycle-end').textContent = formatDate(currentCycle.endDate);
-  if (amountEl) amountEl.textContent = Number(stats.totalAmount || 0).toLocaleString() + ' ر.ع';
+  if (amountEl) amountEl.textContent = Number(stats.totalAmount || 0).toLocaleString() + ' د.ع';
 
   renderActivity();
 }
@@ -370,7 +370,7 @@ function showFormDetails(formId) {
       
       <div style="background:#f0fdf4; padding:20px; border-radius:10px; border-right:4px solid #22c55e; text-align:right;">
         <div style="color:#166534; font-size:14px; font-weight:bold; margin-bottom:10px;">\u{1F4DC} تفاصيل القراءة:</div>
-        <div style="color:#15803d; font-size:16px; line-height:1.8; font-weight:600;">${form.description || 'لا يوجد تفاصيل إضافية'}</div>
+        <div style="color:#15803d; font-size:22px; line-height:2.2; font-weight:700;">${form.description || 'لا يوجد تفاصيل إضافية'}</div>
       </div>
       
       <div style="display:flex; gap:10px; justify-content:center; margin-top:20px; padding-top:15px; border-top: 1px dashed #e9ecef;">
@@ -850,7 +850,7 @@ function renderReports() {
                   <td><strong>${c.name}</strong></td>
                   <td><span style="color:var(--success);font-weight:700">${s.distributed}</span></td>
                   <td><span style="color:var(--warning);font-weight:700">${s.reserved}</span></td>
-                  <td>${Number(s.totalAmount || 0).toLocaleString()} ر.ع</td>
+                  <td>${Number(s.totalAmount || 0).toLocaleString()} د.ع</td>
                 </tr>
               `;
             }).join('')}
@@ -891,7 +891,7 @@ function renderCycles() {
         <div class="cycle-card-stats">
           <div><span>موزعة:</span> <strong>${stats.distributed}</strong></div>
           <div><span>محجوزة:</span> <strong>${stats.reserved}</strong></div>
-          <div><span>المبالغ:</span> <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} ر.ع</strong></div>
+          <div><span>المبالغ:</span> <strong style="color:var(--success)">${Number(stats.totalAmount || 0).toLocaleString()} د.ع</strong></div>
         </div>
         <div class="cycle-card-actions">
           ${!isActive ? '<button class="btn-primary btn-sm" onclick="setActiveCycle(\'' + c.id + '\')">تعيين كدورة نشطة</button>' : '<button class="btn-secondary btn-sm" disabled>✓ الدورة النشطة حالياً</button>'}
@@ -1480,10 +1480,10 @@ window.renderFinance = function() {
   if (!activeCycle) return;
   
   const stats = CycleService.getStats(activeCycle.id);
-  document.getElementById('fin-expected').textContent = stats.totalAmount + ' ر.ع';
-  document.getElementById('fin-collected').textContent = stats.collectedAmount + ' ر.ع';
+  document.getElementById('fin-expected').textContent = stats.totalAmount + ' د.ع';
+  document.getElementById('fin-collected').textContent = stats.collectedAmount + ' د.ع';
   const remaining = stats.totalAmount - stats.collectedAmount;
-  document.getElementById('fin-remaining').textContent = remaining + ' ر.ع';
+  document.getElementById('fin-remaining').textContent = remaining + ' د.ع';
   
   const reps = RepresentativeService.getAll();
   const tbody = document.getElementById('financeRepsBody');
@@ -1500,8 +1500,8 @@ window.renderFinance = function() {
       <tr>
         <td><strong>${rep.name}</strong></td>
         <td>${repStats.reservedCount + repStats.distributedCount} استمارة</td>
-        <td style="color:var(--success)">${repStats.collectedAmount} ر.ع</td>
-        <td style="${remainingRep > 0 ? 'color:#b45309;font-weight:bold' : ''}">${remainingRep} ر.ع</td>
+        <td style="color:var(--success)">${repStats.collectedAmount} د.ع</td>
+        <td style="${remainingRep > 0 ? 'color:#b45309;font-weight:bold' : ''}">${remainingRep} د.ع</td>
         <td>
            <button class="btn-icon" style="color:#0ea5e9;border-color:#0ea5e9" onclick="sendRepWa('${rep.id}')" title="مراسلة لتسديد العهدة">💬 المطالبة</button>
         </td>
@@ -1553,7 +1553,7 @@ window.showParticipantProfile = function(id) {
         <span class="dash-stat-val" style="font-size:24px">${cycleCount}</span>
       </div>
       <div class="dash-stat-row" style="flex-direction:column; text-align:center; padding:10px;">
-        <span style="font-size:12px">إجمالي التبرعات (ر.ع)</span>
+        <span style="font-size:12px">إجمالي التبرعات (د.ع)</span>
         <span class="dash-stat-val" style="font-size:20px; color:var(--success)">${totalPaid}</span>
       </div>
     </div>

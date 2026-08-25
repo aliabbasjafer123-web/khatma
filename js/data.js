@@ -198,14 +198,16 @@ var CycleService = {
     var dists = db.distributions.filter(d => d.cycleId === cycleId && d.status !== 'cancelled');
     var distributed = dists.filter(d => d.status === 'distributed').length;
     var reserved = dists.filter(d => d.status === 'reserved').length;
-    var totalAmount = dists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+    var totalAmount = (distributed + reserved) * 1000; // 1000 IQD per form
+    var collectedAmount = dists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
     var total = TOTAL_FORMS;
     return {
       total,
       distributed,
       reserved,
       available: Math.max(0, total - distributed - reserved),
-      totalAmount
+      totalAmount,
+      collectedAmount
     };
   }
 };
@@ -316,6 +318,21 @@ var RepresentativeService = {
       d.cycleId === cycleId &&
       d.status === 'distributed'
     );
+  },
+  getStats(repId, cycleId) {
+    var db = loadDB();
+    var dists = db.distributions.filter(d => d.representativeId === repId && d.cycleId === cycleId && d.status !== 'cancelled');
+    var distributedCount = dists.filter(d => d.status === 'distributed').length;
+    var reservedCount = dists.filter(d => d.status === 'reserved').length;
+    var totalAmount = (distributedCount + reservedCount) * 1000;
+    var collectedAmount = dists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+    
+    return {
+      distributedCount,
+      reservedCount,
+      totalAmount,
+      collectedAmount
+    };
   }
 };
 
