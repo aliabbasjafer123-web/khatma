@@ -956,6 +956,11 @@ function renderSettings() {
   const tAdminPin = document.getElementById('settingAdminPin'); if (tAdminPin) tAdminPin.value = s.adminPin || '';
   const tUserPin = document.getElementById('settingUserPin'); if (tUserPin) tUserPin.value = s.userPin || '';
   
+  const perms = s.permissions || { finance: false, reports: false, delete: false };
+  if (document.getElementById('permFinance')) document.getElementById('permFinance').checked = perms.finance;
+  if (document.getElementById('permReports')) document.getElementById('permReports').checked = perms.reports;
+  if (document.getElementById('permDelete')) document.getElementById('permDelete').checked = perms.delete;
+  
   if (s.orgLogo) {
     const preview = document.getElementById('settingLogoPreview');
     if (preview) {
@@ -1333,7 +1338,12 @@ function setupEventListeners() {
       printRewards: document.getElementById('settingPrintRewards').value.trim(),
       printFooter: document.getElementById('settingPrintFooter').value.trim(),
       adminPin: document.getElementById('settingAdminPin')?.value.trim() || '',
-      userPin: document.getElementById('settingUserPin')?.value.trim() || ''
+      userPin: document.getElementById('settingUserPin')?.value.trim() || '',
+      permissions: {
+        finance: document.getElementById('permFinance')?.checked || false,
+        reports: document.getElementById('permReports')?.checked || false,
+        delete: document.getElementById('permDelete')?.checked || false
+      }
     };
     
     var logoFile = document.getElementById('settingOrgLogo')?.files[0];

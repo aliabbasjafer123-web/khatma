@@ -517,7 +517,16 @@
                         <div class="form-group">
                             <label>رمز مدخل البيانات (User PIN)</label>
                             <input type="text" id="settingUserPin" class="form-control" placeholder="0000">
-                            <small style="color:var(--text-muted)">يسمح بالإضافة والتعديل فقط (لا يمكنه رؤية المالية أو الإعدادات أو الحذف).</small>
+                            <small style="color:var(--text-muted)">الرمز الخاص بالمندوبين أو مدخلي البيانات.</small>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                            <label>صلاحيات مدخلي البيانات (المندوبين)</label>
+                            <small style="color:var(--text-muted);display:block;margin-bottom:10px;">حدد ماذا يمكن لمن يدخل برمز (User PIN) أن يرى أو يفعل:</small>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="permFinance"> السماح برؤية صفحة الخزينة والمالية</label>
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="permReports"> السماح برؤية صفحة التقارير</label>
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="permDelete"> السماح بحذف البيانات (إظهار أزرار الحذف)</label>
+                            </div>
                         </div>
                         <button class="btn-primary" id="saveSettingsBtn" style="margin-top: 20px;">💾 حفظ وتطبيق إعدادات الطباعة</button>
                     </div>
