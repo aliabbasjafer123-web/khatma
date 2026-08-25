@@ -1753,3 +1753,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+
+// Ensure Access Control is enforced on load
+document.addEventListener('DOMContentLoaded', function() { setTimeout(checkAccessControl, 500); });
