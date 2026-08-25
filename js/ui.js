@@ -113,7 +113,7 @@ function generateFormPrintHtml(form, participantName = '.....................') 
   var rewardsHtml = s.printRewards ? s.printRewards.split(/\n|\\n/).filter(Boolean).map(l => '<div style="margin-bottom:4px;">' + l + '</div>').join('') : '';
 
   return `
-    <div class="a4-page">
+    <div class="print-page">
       <div class="print-border">
         <div class="print-header">
           ${s.orgLogo ? `<img src="${s.orgLogo}" style="max-height:60px; margin-bottom:5px;">` : ''}
@@ -140,8 +140,10 @@ function generateFormPrintHtml(form, participantName = '.....................') 
           </div>
         </div>
         <div class="print-reward-box">
+          <div class="qr-placeholder" id="qr-receipt-${form.id}" style="float:left; width: 80px; height: 80px; margin-right: 10px; border: 1px solid #ccc; padding: 4px; background: #fff;"></div>
           <div class="print-duties-title red-text" style="text-decoration:none">الثواب الذي يحصل عليه المشترك (خلال شهر رجب وشعبان):</div>
           <div style="font-size: 13px; font-weight: 600; line-height: 1.6; padding-right: 10px;">${rewardsHtml}</div>
+          <div style="clear: both;"></div>
         </div>
         <div class="print-stats-box" style="display:flex; align-items:center; justify-content:center; text-align:center; min-height: 40px;">
           <div style="font-size: 14px; font-weight: 800; color: #8b0000;">
@@ -157,7 +159,30 @@ function triggerPrint(htmlContent, title = 'طباعة') {
   var printModalTitle = document.getElementById('printModalTitle');
   var printContent = document.getElementById('printContent');
   if (printModalTitle) printModalTitle.textContent = title;
-  if (printContent) printContent.innerHTML = htmlContent;
+  if (printContent) {
+    printContent.innerHTML = htmlContent;
+    
+    // Generate QR Codes if qrcode.js is loaded
+    if (typeof QRCode !== 'undefined') {
+      setTimeout(() => {
+        var placeholders = printContent.querySelectorAll('.qr-placeholder');
+        placeholders.forEach(function(el) {
+          el.innerHTML = ''; // clear
+          var idStr = el.id.replace('qr-receipt-', '');
+          var webUrl = window.location.origin + window.location.pathname + '?viewForm=' + idStr;
+          new QRCode(el, {
+            text: webUrl,
+            width: 70,
+            height: 70,
+            colorDark : "#8b0000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.L
+          });
+          el.style.border = 'none'; // remove placeholder border
+        });
+      }, 50);
+    }
+  }
   
   Modal.open('printModal');
 }
@@ -236,8 +261,8 @@ function printRepresentativeReceipt(repId, cycleId) {
   }).join('');
 
   var html = `
-    <div class="a4-page" style="padding: 15mm;">
-      <div style="border: 2px solid #8b0000; padding: 20px; border-radius: 8px; min-height: 250mm;">
+    <div class="print-page" style="padding: 10px;">
+      <div style="border: 2px solid #8b0000; padding: 20px; border-radius: 8px;">
         <div style="text-align:center; border-bottom: 2px solid #8b0000; padding-bottom:15px; margin-bottom: 20px;">
           ${s.orgLogo ? `<img src="${s.orgLogo}" style="max-height:80px; margin-bottom:10px;">` : ''}
           <h2 style="color:#8b0000; margin:0;">إيصال استلام عهدة مندوب</h2>

@@ -54,22 +54,21 @@
   }
 
   @page {
-    margin: 0;
-    size: A4 portrait;
+    margin: 4mm;
+    /* تمت إزالة size: A4 portrait للسماح للورق الحراري 80mm و 100mm بالتمدد بشكل صحيح */
   }
 
-  .a4-page {
-    max-width: 210mm;
+  .print-page {
     width: 100%;
     margin: 0 auto;
-    padding: 6mm;
+    padding: 2mm;
     page-break-after: always;
     box-sizing: border-box;
     position: relative;
     background: #fff;
   }
 
-  .a4-page:last-child {
+  .print-page:last-child {
     page-break-after: auto;
   }
 

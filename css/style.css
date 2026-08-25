@@ -1294,3 +1294,37 @@ body {
   .main-content { margin-right: 0 !important; }
   .menu-toggle { display: block; }
 }
+/* ---- Global Search ---- */
+.global-search-container { position: relative; }
+.global-search-results {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  width: 400px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+.global-search-results.hidden { display: none; }
+.search-res-item {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-res-item:hover { background: var(--bg-hover); }
+.search-res-item:last-child { border-bottom: none; }
+.res-icon { font-size: 20px; width: 30px; text-align: center; }
+.res-details { flex: 1; }
+.res-title { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+.res-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+@media (max-width: 860px) {
+  .global-search-container { display: none; } /* Hide on small screens to save space, or show as icon */
+}

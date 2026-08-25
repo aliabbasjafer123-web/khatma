@@ -77,6 +77,7 @@ function renderPage(page) {
     case 'distribution': renderDistribution(); break;
     case 'reports': renderReports(); break;
     case 'cycles': renderCycles(); break;
+    case 'finance': renderFinance(); break;
     case 'settings': renderSettings(); break;
   }
 }
@@ -284,7 +285,7 @@ function renderForms() {
 
 // ---- تفاصيل الاستمارة وتعديلها وطباعتها وتوزيعها المباشر ----
 function showFormDetails(formId) {
-  const form = getFormById(formId);
+  const form = getFormById(parseInt(formId));
   if (!form) return;
 
   currentCycle = CycleService.getActive();
@@ -472,7 +473,7 @@ function renderParticipants() {
     return `
       <tr>
         <td style="color:var(--text-muted)">${i + 1}</td>
-        <td><strong>${p.name}</strong></td>
+        <td><a href="#" onclick="showParticipantProfile('${p.id}'); return false;" style="font-weight:700; color:var(--primary); text-decoration:underline;">${p.name}</a></td>
         <td>${rep ? rep.name : '<span style="color:var(--text-muted)">مستقل</span>'}</td>
         <td>${p.phone || '-'}</td>
         <td><span style="font-weight:700;color:${forms.length > 0 ? 'var(--success)' : 'var(--text-muted)'}">${forms.length}</span></td>
@@ -480,6 +481,7 @@ function renderParticipants() {
         <td>
           <div style="display:flex;gap:6px">
             <button class="btn-icon success" onclick="printParticipantReceipt('${p.id}','${cycleId || ''}')" title="طباعة الإيصال">🖨️</button>
+            <button class="btn-icon" style="color: #25D366; border-color: #25D366;" onclick="sendParticipantWa('${p.id}')" title="مراسلة واتساب">💬</button>
             <button class="btn-icon" onclick="editParticipant('${p.id}')" title="تعديل">✏️</button>
             <button class="btn-icon danger" onclick="deleteParticipant('${p.id}')" title="حذف">🗑️</button>
           </div>
@@ -547,6 +549,7 @@ function renderRepresentatives() {
         <td>
           <div style="display:flex;gap:6px">
             <button class="btn-icon success" onclick="printRepresentativeReceipt('${r.id}','${cycleId || ''}')" title="طباعة عهدة المندوب">🖨️</button>
+            <button class="btn-icon" style="color: #25D366; border-color: #25D366;" onclick="sendRepWa('${r.id}')" title="مراسلة واتساب">💬</button>
             <button class="btn-icon" onclick="editRepresentative('${r.id}')" title="تعديل">✏️</button>
             <button class="btn-icon danger" onclick="deleteRepresentative('${r.id}')" title="حذف">🗑️</button>
           </div>
@@ -950,6 +953,8 @@ function renderSettings() {
   const tNote = document.getElementById('settingPrintNote'); if (tNote) tNote.value = s.printNote || '';
   const tRewards = document.getElementById('settingPrintRewards'); if (tRewards) tRewards.value = s.printRewards || '';
   const tFooter = document.getElementById('settingPrintFooter'); if (tFooter) tFooter.value = s.printFooter || '';
+  const tAdminPin = document.getElementById('settingAdminPin'); if (tAdminPin) tAdminPin.value = s.adminPin || '';
+  const tUserPin = document.getElementById('settingUserPin'); if (tUserPin) tUserPin.value = s.userPin || '';
   
   if (s.orgLogo) {
     const preview = document.getElementById('settingLogoPreview');
@@ -1015,9 +1020,13 @@ function setupEventListeners() {
     Modal.open('participantModal');
   });
 
-  document.getElementById('saveParticipantBtn')?.addEventListener('click', () => {
+  document.getElementById('saveParticipantBtn')?.addEventListener('click', function() {
+    if (this.disabled) return;
+    this.disabled = true;
+    setTimeout(() => this.disabled = false, 1000);
+
     const name = document.getElementById('participantName').value.trim();
-    if (!name) { Toast.error('الرجاء إدخال اسم المشترك'); return; }
+    if (!name) { Toast.error('يرجى كتابة اسم المشترك'); return; }
     const data = {
       name,
       phone: document.getElementById('participantPhone').value.trim(),
@@ -1048,9 +1057,13 @@ function setupEventListeners() {
     Modal.open('representativeModal');
   });
 
-  document.getElementById('saveRepBtn')?.addEventListener('click', () => {
+  document.getElementById('saveRepBtn')?.addEventListener('click', function() {
+    if (this.disabled) return;
+    this.disabled = true;
+    setTimeout(() => this.disabled = false, 1000);
+
     const name = document.getElementById('repName').value.trim();
-    if (!name) { Toast.error('الرجاء إدخال اسم المندوب'); return; }
+    if (!name) { Toast.error('يرجى كتابة اسم المندوب'); return; }
     const data = {
       name,
       phone: document.getElementById('repPhone').value.trim(),
@@ -1082,9 +1095,13 @@ function setupEventListeners() {
     Modal.open('cycleModal');
   });
 
-  document.getElementById('saveCycleBtn')?.addEventListener('click', () => {
+  document.getElementById('saveCycleBtn')?.addEventListener('click', function() {
+    if (this.disabled) return;
+    this.disabled = true;
+    setTimeout(() => this.disabled = false, 1000);
+    
     const name = document.getElementById('cycleName').value.trim();
-    if (!name) { Toast.error('الرجاء إدخال اسم الدورة'); return; }
+    if (!name) { Toast.error('يرجى كتابة اسم الدورة'); return; }
     const data = {
       name,
       cycleNumber: document.getElementById('cycleNumber').value,
@@ -1314,7 +1331,9 @@ function setupEventListeners() {
       printNiya: document.getElementById('settingPrintNiya').value.trim(),
       printNote: document.getElementById('settingPrintNote').value.trim(),
       printRewards: document.getElementById('settingPrintRewards').value.trim(),
-      printFooter: document.getElementById('settingPrintFooter').value.trim()
+      printFooter: document.getElementById('settingPrintFooter').value.trim(),
+      adminPin: document.getElementById('settingAdminPin')?.value.trim() || '',
+      userPin: document.getElementById('settingUserPin')?.value.trim() || ''
     };
     
     var logoFile = document.getElementById('settingOrgLogo')?.files[0];
@@ -1355,3 +1374,417 @@ function setupEventListeners() {
 
 // بدء التطبيق عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', init);
+// ---- Global Search Logic ----
+document.getElementById('globalSearchInput')?.addEventListener('input', function(e) {
+  const val = e.target.value.trim().toLowerCase();
+  const resBox = document.getElementById('globalSearchResults');
+  if (!val) {
+    resBox.classList.add('hidden');
+    return;
+  }
+  
+  let results = [];
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  if (!db) return;
+  
+  db.participants.forEach(p => {
+    if (p.name.toLowerCase().includes(val) || (p.phone && p.phone.includes(val))) {
+      results.push({ type: 'participant', icon: '👥', title: p.name, sub: 'مشترك' + (p.phone ? ' - ' + p.phone : ''), obj: p });
+    }
+  });
+  
+  db.representatives.forEach(r => {
+    if (r.name.toLowerCase().includes(val) || (r.phone && r.phone.includes(val))) {
+      results.push({ type: 'rep', icon: '🧑‍💼', title: r.name, sub: 'مندوب' + (r.phone ? ' - ' + r.phone : ''), obj: r });
+    }
+  });
+  
+  if (results.length === 0) {
+    resBox.innerHTML = '<div style="padding:15px; text-align:center; color:#777;">لا توجد نتائج</div>';
+  } else {
+    resBox.innerHTML = results.slice(0, 10).map(r => `
+      <div class="search-res-item" onclick="handleGlobalSearchClick('${r.type}', '${r.obj.id}')">
+        <div class="res-icon">${r.icon}</div>
+        <div class="res-details">
+          <div class="res-title">${r.title}</div>
+          <div class="res-sub">${r.sub}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  resBox.classList.remove('hidden');
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.global-search-container')) {
+    document.getElementById('globalSearchResults')?.classList.add('hidden');
+  }
+});
+
+window.handleGlobalSearchClick = function(type, id) {
+  document.getElementById('globalSearchResults').classList.add('hidden');
+  document.getElementById('globalSearchInput').value = '';
+  
+  if (type === 'participant') {
+    navigateTo('participants');
+    setTimeout(() => {
+      document.getElementById('participantsSearch').value = id;
+      showParticipantProfile(id);
+    }, 100);
+  } else if (type === 'rep') {
+    navigateTo('representatives');
+  }
+};
+
+window.sendParticipantWa = function(id) {
+  const p = typeof ParticipantService !== 'undefined' ? ParticipantService.getById(id) : null;
+  if (!p || !p.phone) {
+    Toast.error('لا يوجد رقم هاتف مسجل لهذا المشترك');
+    return;
+  }
+  let phone = p.phone.trim();
+  if (phone.startsWith('0')) phone = '964' + phone.substring(1);
+  const text = encodeURIComponent('السلام عليكم ' + p.name + '،\nنذكركم بقراءة الجزء المخصص لكم من الختمة القرآنية. تقبل الله أعمالكم.');
+  window.open('https://wa.me/' + phone + '?text=' + text, '_blank');
+};
+
+window.sendRepWa = function(id) {
+  const r = typeof RepresentativeService !== 'undefined' ? RepresentativeService.getById(id) : null;
+  if (!r || !r.phone) {
+    Toast.error('لا يوجد رقم هاتف مسجل لهذا المندوب');
+    return;
+  }
+  let phone = r.phone.trim();
+  if (phone.startsWith('0')) phone = '964' + phone.substring(1);
+  const text = encodeURIComponent('السلام عليكم ' + r.name + '،\nنود إبلاغكم بخصوص العهدة والاستمارات الخاصة بكم. تقبل الله أعمالكم.');
+  window.open('https://wa.me/' + phone + '?text=' + text, '_blank');
+};
+
+window.renderFinance = function() {
+  const activeCycle = CycleService.getActive();
+  if (!activeCycle) return;
+  
+  const stats = CycleService.getStats(activeCycle.id);
+  document.getElementById('fin-expected').textContent = stats.totalAmount + ' ر.ع';
+  document.getElementById('fin-collected').textContent = stats.collectedAmount + ' ر.ع';
+  const remaining = stats.totalAmount - stats.collectedAmount;
+  document.getElementById('fin-remaining').textContent = remaining + ' ر.ع';
+  
+  const reps = RepresentativeService.getAll();
+  const tbody = document.getElementById('financeRepsBody');
+  if (!tbody) return;
+  
+  let html = '';
+  reps.forEach(rep => {
+    const repStats = RepresentativeService.getStats(rep.id, activeCycle.id);
+    if (repStats.reservedCount === 0 && repStats.distributedCount === 0) return;
+    
+    const remainingRep = repStats.totalAmount - repStats.collectedAmount;
+    
+    html += `
+      <tr>
+        <td><strong>${rep.name}</strong></td>
+        <td>${repStats.reservedCount + repStats.distributedCount} استمارة</td>
+        <td style="color:var(--success)">${repStats.collectedAmount} ر.ع</td>
+        <td style="${remainingRep > 0 ? 'color:#b45309;font-weight:bold' : ''}">${remainingRep} ر.ع</td>
+        <td>
+           <button class="btn-icon" style="color:#0ea5e9;border-color:#0ea5e9" onclick="sendRepWa('${rep.id}')" title="مراسلة لتسديد العهدة">💬 المطالبة</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  if (!html) html = '<tr><td colspan="5" style="text-align:center">لا توجد عهد مالية في هذه الدورة</td></tr>';
+  tbody.innerHTML = html;
+};
+
+window.showParticipantProfile = function(id) {
+  const p = ParticipantService.getById(id);
+  if (!p) return;
+  
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  
+  let totalPaid = 0;
+  let formsCount = 0;
+  let cyclesMap = {};
+  
+  db.distributions.forEach(d => {
+    if (d.type === 'direct' && d.participantId === id) {
+      formsCount += d.forms.length;
+      totalPaid += (d.amount || 0);
+      cyclesMap[d.cycleId] = true;
+    }
+  });
+  
+  const cycleCount = Object.keys(cyclesMap).length;
+  const repName = p.representativeId ? (RepresentativeService.getById(p.representativeId)?.name || 'غير معروف') : 'مستقل';
+  
+  const html = `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+      <div>
+        <h3 style="margin:0; color:var(--primary)">${p.name}</h3>
+        <div style="color:var(--text-secondary); font-size:13px; margin-top:4px;">هاتف: ${p.phone || 'غير متوفر'} | المندوب: ${repName}</div>
+      </div>
+      <button class="btn-icon success" onclick="sendParticipantWa('${p.id}')">💬 واتساب</button>
+    </div>
+    
+    <div class="dash-stats" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:20px;">
+      <div class="dash-stat-row" style="flex-direction:column; text-align:center; padding:10px;">
+        <span style="font-size:12px">إجمالي الاستمارات</span>
+        <span class="dash-stat-val" style="font-size:24px">${formsCount}</span>
+      </div>
+      <div class="dash-stat-row" style="flex-direction:column; text-align:center; padding:10px;">
+        <span style="font-size:12px">الدورات المشارك بها</span>
+        <span class="dash-stat-val" style="font-size:24px">${cycleCount}</span>
+      </div>
+      <div class="dash-stat-row" style="flex-direction:column; text-align:center; padding:10px;">
+        <span style="font-size:12px">إجمالي التبرعات (ر.ع)</span>
+        <span class="dash-stat-val" style="font-size:20px; color:var(--success)">${totalPaid}</span>
+      </div>
+    </div>
+    
+    <div style="background:#f9f9f9; padding:12px; border-radius:8px; font-size:13px;">
+      <strong>ملاحظات:</strong> <br> ${p.notes || 'لا توجد ملاحظات مسجلة.'}
+    </div>
+  `;
+  
+  document.getElementById('profileContent').innerHTML = html;
+  Modal.open('participantProfileModal');
+};
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const viewFormId = params.get('viewForm');
+  
+  if (viewFormId) {
+    // Show the public viewer container immediately to hide everything else
+    const container = document.getElementById('publicViewContainer');
+    if (container) {
+      container.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling main body
+    }
+    
+    // We need to wait for Settings to load to display duties/rewards correctly
+    // But FORMS_DB is available immediately.
+    setTimeout(() => {
+      renderPublicForm(viewFormId);
+    }, 1500); // Give Firebase 1.5s to load settings, then render
+  }
+});
+
+function renderPublicForm(formId) {
+  const form = typeof getFormById === 'function' ? getFormById(parseInt(formId)) : null;
+  const content = document.getElementById('publicViewContent');
+  
+  if (!form) {
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    return;
+  }
+  
+  // Try to get settings
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const s = (db && db.settings) ? db.settings : {
+    printDuties: '',
+    printRewards: '',
+    printNiya: '',
+    printNote: ''
+  };
+  
+  const dutiesHtml = s.printDuties ? s.printDuties.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  
+  const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
+  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  
+  content.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
+        <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
+        ${dutiesHtml}
+      </div>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border-right: 4px solid #8b0000;">
+        <h4 style="color:#8b0000; margin-top:0; font-weight:800;">الثواب والمكافأة:</h4>
+        ${rewardsHtml}
+      </div>
+      
+      ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
+      ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+    </div>
+    
+    <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
+      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+    </a>
+  `;
+}
+// =====================
+// نظام الصلاحيات والقفل (Security & Access Control)
+// =====================
+window.checkAccessControl = function() {
+  // If public viewer is active, don't show login
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('viewForm')) {
+    document.getElementById('loginOverlay')?.classList.add('hidden');
+    return;
+  }
+
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  if (!db || !db.settings) return;
+  
+  const adminPin = db.settings.adminPin || '1234';
+  const userPin = db.settings.userPin || '0000';
+  const overlay = document.getElementById('loginOverlay');
+  if (!overlay) return;
+  
+  // If no PINs are set, access is fully open
+  if (!adminPin && !userPin) {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  }
+  
+  // Check session
+  const currentRole = sessionStorage.getItem('khatma_role');
+  if (currentRole === 'admin') {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('restricted-mode');
+    return;
+  } else if (currentRole === 'user') {
+    overlay.classList.add('hidden');
+    document.body.classList.add('restricted-mode');
+    enforceRestrictedMode();
+    return;
+  }
+  
+  // Not logged in -> Show overlay
+  overlay.classList.remove('hidden');
+  
+  // Setup login button
+  document.getElementById('loginBtn').onclick = function() {
+    const pin = document.getElementById('loginPin').value.trim();
+    if (adminPin && pin === adminPin) {
+      sessionStorage.setItem('khatma_role', 'admin');
+      overlay.classList.add('hidden');
+      document.body.classList.remove('restricted-mode');
+      Toast.success('تم تسجيل الدخول بنجاح كمسؤول');
+    } else if (userPin && pin === userPin) {
+      sessionStorage.setItem('khatma_role', 'user');
+      overlay.classList.add('hidden');
+      document.body.classList.add('restricted-mode');
+      enforceRestrictedMode();
+      Toast.success('تم تسجيل الدخول بنجاح كمدخل بيانات');
+      
+      // If they were on a restricted page, kick them to dashboard
+      const currentPage = document.querySelector('.nav-item.active')?.getAttribute('data-page');
+      if (['finance', 'reports', 'settings'].includes(currentPage)) {
+        navigateTo('dashboard');
+      }
+    } else {
+      Toast.error('رمز الدخول غير صحيح');
+      document.getElementById('loginPin').value = '';
+    }
+  };
+};
+
+function enforceRestrictedMode() {
+  // Add CSS to hide restricted items
+  if (!document.getElementById('restrictedStyles')) {
+    const style = document.createElement('style');
+    style.id = 'restrictedStyles';
+    style.innerHTML = `
+      body.restricted-mode [data-page="finance"],
+      body.restricted-mode [data-page="reports"],
+      body.restricted-mode [data-page="settings"],
+      body.restricted-mode .btn-danger,
+      body.restricted-mode .danger,
+      body.restricted-mode .delete {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Intercept init
+const oldInit = window.init;
+if (oldInit && !window.initIntercepted) {
+  window.init = function() {
+    oldInit();
+    setTimeout(checkAccessControl, 500); // Give DB time to load
+  };
+  window.initIntercepted = true;
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const viewFormId = params.get('viewForm');
+  
+  if (viewFormId) {
+    // Show the public viewer container immediately to hide everything else
+    const container = document.getElementById('publicViewContainer');
+    if (container) {
+      container.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling main body
+    }
+    
+    // We need to wait for Settings to load to display duties/rewards correctly
+    // But FORMS_DB is available immediately.
+    setTimeout(() => {
+      renderPublicForm(viewFormId);
+    }, 1500); // Give Firebase 1.5s to load settings, then render
+  }
+});
+
+function renderPublicForm(formId) {
+  const form = typeof getFormById === 'function' ? getFormById(parseInt(formId)) : null;
+  const content = document.getElementById('publicViewContent');
+  
+  if (!form) {
+    content.innerHTML = '<div style="text-align:center; padding:50px; color:red;">عذراً، الاستمارة غير موجودة!</div>';
+    return;
+  }
+  
+  // Try to get settings
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const s = (db && db.settings) ? db.settings : {
+    printDuties: '',
+    printRewards: '',
+    printNiya: '',
+    printNote: ''
+  };
+  
+  const dutiesHtml = s.printDuties ? s.printDuties.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:var(--primary)">✔</span> ' + l + '</div>').join('') : '';
+  const rewardsHtml = s.printRewards ? s.printRewards.split(/\\n/).filter(Boolean).map(l => '<div style="margin-bottom:8px; display:flex; gap:10px;"><span style="color:#8b0000">🎁</span> ' + l + '</div>').join('') : '';
+  
+  const waMsg = encodeURIComponent('السلام عليكم، لقد أتممت قراءة الاستمارة رقم ' + form.id);
+  const waLink = 'https://wa.me/9647842277961?text=' + waMsg;
+  
+  content.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h3 style="margin:0; color:var(--primary);">استمارة رقم ${form.id}</h3>
+        <span style="background:var(--bg-hover); padding:5px 10px; border-radius:20px; font-weight:bold;">${form.group}</span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="color:#8b0000; margin-bottom:10px; font-weight:800;">الورد اليومي المطلوب:</h4>
+        ${dutiesHtml}
+      </div>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border-right: 4px solid #8b0000;">
+        <h4 style="color:#8b0000; margin-top:0; font-weight:800;">الثواب والمكافأة:</h4>
+        ${rewardsHtml}
+      </div>
+      
+      ${s.printNiya ? `<div style="margin-bottom:10px; font-size:14px;"><strong>النية:</strong> ${s.printNiya.replace('النية للقراءة :-', '')}</div>` : ''}
+      ${s.printNote ? `<div style="font-size:14px;"><strong>ملاحظة:</strong> ${s.printNote.replace('ملاحظة :-', '')}</div>` : ''}
+    </div>
+    
+    <a href="${waLink}" target="_blank" style="display:block; width:100%; text-align:center; background:#25D366; color:#fff; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; box-shadow:0 4px 10px rgba(37,211,102,0.3);">
+      ✅ إبلاغ الإدارة بإتمام القراءة عبر واتساب
+    </a>
+  `;
+}
