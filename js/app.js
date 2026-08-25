@@ -1475,6 +1475,95 @@ document.getElementById('globalSearchInput')?.addEventListener('input', function
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.global-search-container')) {
+    document.getElementById('globalSearchResults')?.classList.add('hidden');
+  }
+});
+
+window.handleGlobalSearchClick = function(type, id) {
+  document.getElementById('globalSearchResults').classList.add('hidden');
+  document.getElementById('globalSearchInput').value = '';
+  
+  if (type === 'participant') {
+    navigateTo('participants');
+    setTimeout(() => {
+      document.getElementById('participantsSearch').value = id;
+      showParticipantProfile(id);
+    }, 100);
+  } else if (type === 'rep') {
+    navigateTo('representatives');
+  }
+};
+
+window.sendParticipantWa = function(id) {
+  const p = typeof ParticipantService !== 'undefined' ? ParticipantService.getById(id) : null;
+  if (!p || !p.phone) {
+    Toast.error('لا يوجد رقم هاتف مسجل لهذا المشترك');
+    return;
+  }
+  let phone = p.phone.trim();
+  if (phone.startsWith('0')) phone = '964' + phone.substring(1);
+  
+  // Calculate total paid by this participant in the active cycle
+  const db = typeof loadDB === 'function' ? loadDB() : MEMORY_DB;
+  const activeCycle = typeof CycleService !== 'undefined' ? CycleService.getActive() : null;
+  
+  let amountText = '';
+  if (db && db.distributions && activeCycle) {
+    const myDists = db.distributions.filter(d => 
+      d.participantId === id && d.cycleId === activeCycle.id && d.status === 'distributed'
+    );
+    const totalPaid = myDists.reduce((sum, d) => sum + (parseFloat(d.paidAmount) || 0), 0);
+    if (totalPaid > 0) {
+      amountText = 'المبلغ المستلم منك: *' + totalPaid + '* د.ع\n';
+    }
+  }
+  
+  const text = encodeURIComponent('السلام عليكم ' + p.name + '،\n' +
+    'تم استلام ورقتك في ختمة القرآن الكريم. تقبل الله أعمالكم.\n' + amountText);
+  window.open('https://wa.me/' + phone + '?text=' + text, '_blank');
+};
+
+window.sendRepWa = function(id) {
+  const r = typeof RepresentativeService !== 'undefined' ? RepresentativeService.getById(id) : null;
+  if (!r || !r.phone) {
+    Toast.error('لا يوجد رقم هاتف مسجل لهذا المندوب');
+    return;
+  }
+  let phone = r.phone.trim();
+  if (phone.startsWith('0')) phone = '964' + phone.substring(1);
+  
+  // Calculate remaining amount for this rep
+  const activeCycle = typeof CycleService !== 'undefined' ? CycleService.getActive() : null;
+  let remainingText = '';
+  if (activeCycle) {
+    const repStats = RepresentativeService.getStats(id, activeCycle.id);
+    const remaining = repStats.totalAmount - repStats.collectedAmount;
+    if (remaining > 0) {
+      remainingText = 'المبلغ المطلوب تسليمه: *' + remaining + '* د.ع\n';
+    }
+  }
+  
+  const text = encodeURIComponent('السلام عليكم ' + r.name + '،\n' +
+    'نود إبلاغكم بخصوص العهدة والاستمارات الخاصة بكم. تقبل الله أعمالكم.\n' + remainingText);
+  window.open('https://wa.me/' + phone + '?text=' + text, '_blank');
+};
+
+window.renderFinance = function() {
+  const activeCycle = CycleService.getActive();
+  if (!activeCycle) return;
+  
+  const stats = CycleService.getStats(activeCycle.id);
+  document.getElementById('fin-expected').textContent = stats.totalAmount + ' د.ع';
+  document.getElementById('fin-collected').textContent = stats.collectedAmount + ' د.ع';
+  const remaining = stats.totalAmount - stats.collectedAmount;
+  document.getElementById('fin-remaining').textContent = remaining + ' د.ع';
+  
+  const reps = RepresentativeService.getAll();
+  const tbody = document.getElementById('financeRepsBody');
+  if (!tbody) return;
+  
+  let html = '';
+  reps.forEach(rep => {
     const repStats = RepresentativeService.getStats(rep.id, activeCycle.id);
     if (repStats.reservedCount === 0 && repStats.distributedCount === 0) return;
     
